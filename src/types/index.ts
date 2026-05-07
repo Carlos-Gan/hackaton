@@ -4,7 +4,7 @@ export interface QrData {
     timestamp?: number;
 }
 
-export type PaymentStep = 'scaneando' | 'pagando' | 'exito' | 'error';
+export type PaymentStep = 'escaneando' | 'pagando' | 'exito' | 'error';
 
 export interface PaymentIntentResponse {
     clientSecret: string;
