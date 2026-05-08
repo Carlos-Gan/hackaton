@@ -1,145 +1,204 @@
-import { useState, useEffect } from 'react';
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
-import { 
-  Elements, 
-  PaymentElement, 
-  useStripe, 
-  useElements} from '@stripe/react-stripe-js';
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-// Tipos para las props
-interface PagoStripeProps {
-  amount: number;
-  onSuccess: () => void;
-  qrData?: string;
+type Props = {
+  amount: number
+  onSuccess: () => void
 }
 
-// Tipos para el formulario interno
-interface PaymentFormProps {
-  amount: number;
-  onSuccess: () => void;
-}
+function PagoStripe({ amount, onSuccess }: Props) {
+  const [loading, setLoading] = useState(false)
+  const [estado, setEstado] = useState<
+    'idle' | 'procesando' | 'aprobado'
+  >('idle')
 
-// Cliente de Stripe (se carga una sola vez)
-const stripePromise: Promise<Stripe | null> = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+  const handlePago = async () => {
+    setLoading(true)
+    setEstado('procesando')
 
-// Componente interno del formulario
-function PaymentForm({ amount, onSuccess }: PaymentFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [clientSecret, setClientSecret] = useState<string>('');
-  const [processing, setProcessing] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+    // Simula validación bancaria
+    await new Promise((r) => setTimeout(r, 1800))
 
-  // Crear el PaymentIntent al cargar el componente
-  useEffect(() => {
-    const createPaymentIntent = async () => {
-      try {
-        const response = await fetch('http://localhost:5173/api/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Error al crear el pago');
-        }
-        
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'Error de conexión');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Simula aprobación
+    setEstado('aprobado')
 
-    createPaymentIntent();
-  }, [amount]);
+    // Espera para mostrar check
+    await new Promise((r) => setTimeout(r, 1400))
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) {
-      setMessage('Cargando sistema de pagos...');
-      return;
-    }
-
-    setProcessing(true);
-    setMessage('');
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/pago-exitoso`,
-      },
-      redirect: 'if_required',
-    });
-
-    if (error) {
-      setMessage(error.message || 'Error al procesar el pago');
-      setProcessing(false);
-    } else {
-      // Pago exitoso
-      onSuccess();
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="text-center py-4">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
-        <p className="mt-2 text-slate-400">Preparando pago...</p>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return <p className="text-red-400 text-center">Error al iniciar el pago</p>;
+    onSuccess()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      <button 
-        type="submit" 
-        disabled={!stripe || processing}
-        className="w-full rounded-full bg-emerald-500 px-6 py-3 font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed"
+    <div className="space-y-4">
+
+      {/* Tarjeta fake */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="overflow-hidden rounded-[1.8rem] border p-5"
+        style={{
+          background:
+            'linear-gradient(145deg, rgba(25,25,20,0.9), rgba(10,10,8,0.9))',
+          borderColor: 'rgba(201,168,76,0.12)',
+        }}
       >
-        {processing ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-            Procesando...
-          </span>
-        ) : (
-          `Pagar $${amount.toFixed(2)} MXN`
+        {/* Glow */}
+        <div className="pointer-events-none absolute inset-0 opacity-20">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-[#c86a4c]/30 blur-3xl" />
+        </div>
+
+        <div className="relative z-10">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-[#8A8272]">
+                Tarjeta digital
+              </p>
+
+              <h3 className="mt-1 text-xl font-bold text-[#F0E8D0]">
+                Demo Transit Pay
+              </h3>
+            </div>
+
+            <motion.div
+              animate={{
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+              }}
+              className="text-4xl"
+            >
+              💳
+            </motion.div>
+          </div>
+
+          <div className="mb-6 font-mono text-lg tracking-[0.3em] text-[#F0E8D0]">
+            4242 •••• •••• 4242
+          </div>
+
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#8A8272]">
+                Total
+              </p>
+
+              <p className="text-3xl font-black text-[#4cc98f]">
+                ${amount}.00 MXN
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#8A8272]">
+                Estado
+              </p>
+
+              <p className="text-sm text-[#c86a4c]">
+                Demo
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Botón */}
+      <AnimatePresence mode="wait">
+
+        {estado === 'idle' && (
+          <motion.button
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            whileHover={{
+              scale: 1.03,
+              boxShadow:
+                '0 0 30px rgba(200,106,76,0.25)',
+            }}
+            whileTap={{
+              scale: 0.97,
+            }}
+            onClick={handlePago}
+            disabled={loading}
+            className="w-full rounded-full px-6 py-3 text-sm font-semibold"
+            style={{
+              background: '#c86a4c',
+              color: '#0E0E0A',
+            }}
+          >
+            Confirmar pago
+          </motion.button>
         )}
-      </button>
-      {message && <p className="text-red-400 text-sm text-center">{message}</p>}
-    </form>
-  );
+
+        {estado === 'procesando' && (
+          <motion.div
+            key="procesando"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center rounded-3xl border p-6"
+            style={{
+              background: 'rgba(201,168,76,0.05)',
+              borderColor: 'rgba(201,168,76,0.1)',
+            }}
+          >
+            {/* Spinner */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{
+                repeat: Infinity,
+                duration: 1,
+                ease: 'linear',
+              }}
+              className="mb-4 h-10 w-10 rounded-full border-4 border-[#c86a4c]/20 border-t-[#c86a4c]"
+            />
+
+            <p className="text-sm font-semibold text-[#F0E8D0]">
+              Procesando pago...
+            </p>
+
+            <p className="mt-1 text-xs text-[#8A8272]">
+              Conectando con el banco
+            </p>
+          </motion.div>
+        )}
+
+        {estado === 'aprobado' && (
+          <motion.div
+            key="aprobado"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-3xl border p-6 text-center"
+            style={{
+              background: 'rgba(76,201,143,0.08)',
+              borderColor: 'rgba(76,201,143,0.2)',
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{
+                type: 'spring',
+                stiffness: 200,
+              }}
+              className="mb-3 text-5xl"
+            >
+              ✅
+            </motion.div>
+
+            <h3 className="text-lg font-bold text-[#4cc98f]">
+              Compra aprobada
+            </h3>
+
+            <p className="mt-1 text-sm text-[#ada79c]">
+              Tu boleto ha sido emitido correctamente
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
-// Componente principal
-export default function PagoStripe({ amount, onSuccess }: PagoStripeProps) {
-  const [stripeInitialized, setStripeInitialized] = useState(false);
-
-  useEffect(() => {
-    stripePromise.then(() => setStripeInitialized(true));
-  }, []);
-
-  if (!stripeInitialized) {
-    return (
-      <div className="text-center py-8">
-        <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent"></div>
-        <p className="mt-3 text-slate-400">Cargando pasarela de pagos...</p>
-      </div>
-    );
-  }
-
-  return (
-    <Elements stripe={stripePromise} options={{ locale: 'es' }}>
-      <PaymentForm amount={amount} onSuccess={onSuccess} />
-    </Elements>
-  );
-}
+export default PagoStripe
