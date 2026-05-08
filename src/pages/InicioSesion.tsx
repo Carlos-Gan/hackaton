@@ -74,10 +74,10 @@ const InicioSesion: React.FC = () => {
                 }}
             >
                 {/* Brand */}
-                <div className="mb-7 flex items-center gap-3">
+                <div className="mb-7 flex items-center gap-6">
                     <div
                         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-lg"
-                        style={{ background: colors.brand.gold }}
+                        style={{ background: colors.brand.goldBorder }}
                     >
                         🦂
                     </div>
@@ -165,15 +165,6 @@ const InicioSesion: React.FC = () => {
                         {mensaje.texto}
                     </div>
                 )}
-
-                {/* Toggle login/registro */}
-                <div className="mt-6 flex items-center gap-3">
-                    <hr className="flex-1" style={{ borderColor: colors.brand.goldBorder }} />
-                    <span className="text-xs" style={{ color: colors.text.muted }}>
-                        {modo === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                    </span>
-                    <hr className="flex-1" style={{ borderColor: colors.brand.goldBorder }} />
-                </div>
                 <button
                     onClick={() => { setModo(modo === 'login' ? 'registro' : 'login'); setMensaje(null) }}
                     className="mt-4 w-full text-center text-sm transition hover:opacity-80"

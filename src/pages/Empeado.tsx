@@ -20,10 +20,7 @@ import { useAuth } from '../hooks/useAuth'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
 
-// ─────────────────────────────────────────────────────────────
 // Datos demo
-// ─────────────────────────────────────────────────────────────
-
 const congestionHoras = [
   { hora: '6 AM', nivel: 40 },
   { hora: '8 AM', nivel: 95 },
@@ -36,20 +33,14 @@ const congestionHoras = [
 const usoDiario = [45, 60, 75, 90, 70, 95, 80]
 const dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-// ─────────────────────────────────────────────────────────────
 // Helpers
-// ─────────────────────────────────────────────────────────────
-
 function nivelColor(n: number) {
   if (n >= 85) return colors.brand.gold
   if (n >= 60) return colors.brand.orange
   return colors.green.primary
 }
 
-// ─────────────────────────────────────────────────────────────
 // Card reutilizable
-// ─────────────────────────────────────────────────────────────
-
 function StatCard({
   label,
   value,
@@ -173,7 +164,7 @@ function ModalEditar({
           </h2>
         </div>
 
-        {/* ── Toggle de estado ─────────────────────────────── */}
+        {/* Toggle de estado */}
         <p className="mb-2 text-xs uppercase tracking-widest" style={{ color: colors.text.muted }}>
           Estado de la ruta
         </p>
@@ -219,7 +210,7 @@ function ModalEditar({
           </div>
         )}
 
-        {/* ── Mini mapa ────────────────────────────────────── */}
+        {/*  Mini mapa  */}
         <p className="mb-2 text-xs uppercase tracking-widest" style={{ color: colors.text.muted }}>
           Recorrido de la ruta
         </p>
@@ -285,10 +276,7 @@ function ModalEditar({
   )
 }
 
-// ─────────────────────────────────────────────────────────────
 // Congestión
-// ─────────────────────────────────────────────────────────────
-
 function Congestion() {
   return (
     <div
@@ -355,10 +343,7 @@ function Congestion() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────
 // Uso semanal
-// ─────────────────────────────────────────────────────────────
-
 function UsoSemanal() {
   const data = {
     labels: dias,
@@ -453,10 +438,7 @@ function UsoSemanal() {
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────
 // Modal Nueva Ruta
-// ─────────────────────────────────────────────────────────────
 
 function ModalNuevaRuta({
   onClose,
@@ -562,7 +544,7 @@ function ModalNuevaRuta({
           + Nueva ruta
         </h2>
 
-        {/* ── Nombre ───────────────────────────────────────── */}
+        {/*  Nombre  */}
         <div className="mb-4">
           <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
             style={{ color: colors.text.muted }}>
@@ -581,7 +563,7 @@ function ModalNuevaRuta({
           />
         </div>
 
-        {/* ── Color ────────────────────────────────────────── */}
+        {/*  Color  */}
         <div className="mb-4">
           <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
             style={{ color: colors.text.muted }}>
@@ -618,7 +600,7 @@ function ModalNuevaRuta({
           </div>
         </div>
 
-        {/* ── Estado ───────────────────────────────────────── */}
+        {/*  Estado  */}
         <div className="mb-4">
           <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
             style={{ color: colors.text.muted }}>
@@ -648,7 +630,7 @@ function ModalNuevaRuta({
           </div>
         </div>
 
-        {/* ── Camiones y Capacidad ─────────────────────────── */}
+        {/*  Camiones y Capacidad  */}
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
@@ -692,7 +674,7 @@ function ModalNuevaRuta({
           </div>
         </div>
 
-        {/* ── Waypoints ────────────────────────────────────── */}
+        {/*  Waypoints */}
         <div className="mb-4">
           <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
             style={{ color: colors.text.muted }}>
@@ -763,10 +745,7 @@ function ModalNuevaRuta({
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────
 // Tabla rutas
-// ─────────────────────────────────────────────────────────────
 
 function TablaRutas({
   rutas,
@@ -832,7 +811,6 @@ function TablaRutas({
             </p>
           </div>
 
-          {/* ✅ Botón funcional — sin "hidden" */}
           <button
             onClick={() => setModalNueva(true)}
             className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition hover:brightness-110"
@@ -940,17 +918,14 @@ function TablaRutas({
     </>
   )
 }
-
-// ─────────────────────────────────────────────────────────────
 // Principal
-// ─────────────────────────────────────────────────────────────
 
 function Empleado() {
   const { rutas, setRutas } = useRutas()
   const { user } = useAuth()          // ← usuario actual
   const navigate = useNavigate()
 
-  // ── Cerrar sesión ─────────────────────────────────────────
+  // Cerrar sesión 
   async function handleSignOut() {
     await signOut(auth)
     navigate('/login')
