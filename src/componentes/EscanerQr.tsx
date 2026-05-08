@@ -11,9 +11,9 @@ interface EscanerQRProps {
 function EscanerQR({ onQrDetected, onCancel }: EscanerQRProps) {
   const [error, setError] = useState<string | null>(null);
 
-  const handleScan = (detectedCodes: any[]) => {  // 👈 onDecode cambió a onScan
+  const handleScan = (detectedCodes: any[]) => { 
     if (detectedCodes && detectedCodes.length > 0) {
-      const result = detectedCodes[0].rawValue;  // El formato cambió
+      const result = detectedCodes[0].rawValue; 
       onQrDetected({
         raw: result,
         route: extractRouteFromQR(result),
@@ -49,12 +49,12 @@ function EscanerQR({ onQrDetected, onCancel }: EscanerQRProps) {
         
         <div className="overflow-hidden rounded-xl">
           <Scanner
-            onScan={handleScan}           // 👈 onDecode → onScan
+            onScan={handleScan}          
             onError={handleError}
             constraints={{ 
               facingMode: getCameraFacingMode()
             }}
-            scanDelay={500}               // 👈 sigue igual
+            scanDelay={500}              
           />
         </div>
         

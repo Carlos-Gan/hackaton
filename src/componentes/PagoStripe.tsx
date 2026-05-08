@@ -35,7 +35,7 @@ function PaymentForm({ amount, onSuccess }: PaymentFormProps) {
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
-        const response = await fetch('http://localhost:5252/api/create-payment-intent', {
+        const response = await fetch('http://localhost:5173/api/create-payment-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount })
