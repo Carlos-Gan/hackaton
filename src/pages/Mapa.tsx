@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
-// ✅ Fix: evita íconos rotos con webpack/vite
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
@@ -13,7 +12,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: iconShadow,
 })
 
-// ✅ Fix: declarar el módulo para que TypeScript reconozca L.Routing
 declare module 'leaflet' {
   namespace Routing {
     function control(options: object): L.Control & { getPlan(): object }
@@ -23,8 +21,6 @@ import 'leaflet-routing-machine'
 
 const center: [number, number] = [24.0277, -104.6532]
 
-// ✅ Fix: usar tuplas en lugar de L.latLng() al nivel del módulo
-//    (L.latLng a nivel de módulo puede romper en SSR / Next.js)
 type RutaData = {
   color: string
   waypoints: [number, number][]
@@ -95,10 +91,6 @@ const rutas: RutaData[] = [
       [24.004886, -104.653077],
       [24.005353, -104.655941],
       [24.006198, -104.662556],
-
-
-
-
     ],
   },
   {
@@ -120,11 +112,9 @@ type RutaProps = {
 
 function RutaCamion({ waypoints, color }: RutaProps) {
   const map = useMap()
-  // ✅ Fix: ref para evitar duplicar controles en React Strict Mode
   const controlRef = useRef<L.Control | null>(null)
 
   useEffect(() => {
-    // ✅ Fix: convertir tuplas a L.LatLng dentro del efecto (seguro en cliente)
     const latLngs = waypoints.map(([lat, lng]) => L.latLng(lat, lng))
 
     const routingControl = L.Routing.control({
@@ -144,15 +134,98 @@ function RutaCamion({ waypoints, color }: RutaProps) {
     controlRef.current = routingControl
 
     return () => {
-      // ✅ Fix: limpieza robusta usando la ref
       if (controlRef.current) {
         map.removeControl(controlRef.current)
         controlRef.current = null
       }
     }
-    // ✅ Fix: dependencias correctas — waypoints y color son primitivos estables
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, color])
+
+  return null
+}
+
+// ✅ NUEVO: ícono personalizado para tu ubicación (punto azul pulsante)
+const iconoUbicacion = L.divIcon({
+  className: '',
+  html: `
+    <div style="
+      width: 18px; height: 18px;
+      background: #3b82f6;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.35);
+      animation: pulso 1.5s infinite;
+    "></div>
+    <style>
+      @keyframes pulso {
+        0%   { box-shadow: 0 0 0 0px rgba(59,130,246,0.5); }
+        100% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+      }
+    </style>
+  `,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+})
+
+// ✅ NUEVO: componente que obtiene y muestra tu ubicación en el mapa
+function UbicacionActual() {
+  const map = useMap()
+  const markerRef = useRef<L.Marker | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setError('Tu navegador no soporta geolocalización')
+      return
+    }
+
+    // Muestra la posición inicial
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        const latlng = L.latLng(latitude, longitude)
+
+        if (markerRef.current) {
+          // Si ya existe el marcador, solo actualiza su posición
+          markerRef.current.setLatLng(latlng)
+        } else {
+          // Crea el marcador la primera vez y centra el mapa
+          markerRef.current = L.marker(latlng, { icon: iconoUbicacion })
+            .addTo(map)
+            .bindPopup('📍 Estás aquí')
+          map.setView(latlng, 15)
+        }
+      },
+      (err) => {
+        setError('No se pudo obtener tu ubicación: ' + err.message)
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
+      }
+    )
+
+    return () => {
+      // Limpia el watcher y el marcador al desmontar
+      navigator.geolocation.clearWatch(watchId)
+      if (markerRef.current) {
+        markerRef.current.remove()
+        markerRef.current = null
+      }
+    }
+  }, [map])
+
+  // Muestra el error flotante sobre el mapa si ocurre
+  if (error) {
+    return (
+      <div className="absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2
+                      rounded-xl bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+        ⚠️ {error}
+      </div>
+    )
+  }
 
   return null
 }
@@ -164,27 +237,31 @@ function Mapa() {
         <h1 className="mb-4 text-3xl font-bold text-white">
           Rutas de Camión
         </h1>
-        <MapContainer
-          center={center}
-          zoom={13}
-          scrollWheelZoom
-          // ✅ Fix: id único ayuda a Leaflet a identificar el contenedor
-          id="map"
-          className="h-[75vh] w-full rounded-3xl"
-        >
-          <TileLayer
-            attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {rutas.map((ruta) => (
-            <RutaCamion
-              // ✅ Fix: key con color es más estable que el índice
-              key={ruta.color}
-              waypoints={ruta.waypoints}
-              color={ruta.color}
+        <div className="relative"> {/* ✅ necesario para el z-index del error */}
+          <MapContainer
+            center={center}
+            zoom={13}
+            scrollWheelZoom
+            id="map"
+            className="h-[75vh] w-full rounded-3xl"
+          >
+            <TileLayer
+              attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-          ))}
-        </MapContainer>
+            {rutas.map((ruta) => (
+              <RutaCamion
+                key={ruta.color}
+                waypoints={ruta.waypoints}
+                color={ruta.color}
+              />
+            ))}
+
+            {/* ✅ NUEVO: agrega tu ubicación al mapa */}
+            <UbicacionActual />
+
+          </MapContainer>
+        </div>
       </div>
     </div>
   )
