@@ -5,6 +5,7 @@ import type { QrData, PaymentStep } from '../types'
 
 import EscanerQR from '../componentes/EscanerQr'
 import PagoStripe from '../componentes/PagoStripe'
+import { colors } from '../utils/theme'
 
 function PagoCamion() {
   const [step, setStep] = useState<PaymentStep>('escaneando')
@@ -61,7 +62,7 @@ function PagoCamion() {
         animate={{ opacity: 1 }}
         className="min-h-screen"
         style={{
-          background: '#4a4e59',
+          background: colors.background,
         }}
       >
         {/* Fondo ambiental */}
@@ -100,7 +101,7 @@ function PagoCamion() {
         animate={{ opacity: 1 }}
         className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 text-[#F0E8D0]"
         style={{
-          background: '#4a4e59',
+          background: colors.background,
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
@@ -117,8 +118,8 @@ function PagoCamion() {
           className="pointer-events-none fixed inset-0"
           style={{
             background: `
-              radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.12) 0%, transparent 70%),
-              radial-gradient(ellipse 50% 40% at 90% 80%, rgba(30,58,47,0.25) 0%, transparent 60%)
+              colors.gradients.backgroundLight,
+              colors.gradients.backgroundDark
             `,
           }}
         />
@@ -130,7 +131,7 @@ function PagoCamion() {
           className="relative z-10 w-full max-w-md overflow-hidden rounded-[2rem] border p-7 backdrop-blur-xl"
           style={{
             background: 'rgba(18,18,14,0.72)',
-            borderColor: 'rgba(201,168,76,0.12)',
+            borderColor: colors.brand.goldShadow,
             boxShadow:
               '0 30px 80px -30px rgba(0,0,0,0.65)',
           }}
@@ -151,7 +152,7 @@ function PagoCamion() {
               className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
               style={{
                 background:
-                  'linear-gradient(135deg, #4cc98f, #305e7a)',
+                  colors.gradients.header,
               }}
             >
               🚍
@@ -178,8 +179,8 @@ function PagoCamion() {
             variants={fadeUp}
             className="mb-5 rounded-2xl border p-4"
             style={{
-              background: 'rgba(201,168,76,0.05)',
-              borderColor: 'rgba(201,168,76,0.1)',
+              background: colors.brand.goldCardBorder,
+              borderColor: colors.brand.goldBorder,
             }}
           >
             <p className="mb-1 text-xs uppercase tracking-[0.2em] text-[#8A8272]">
@@ -210,7 +211,7 @@ function PagoCamion() {
             onClick={() => setStep('escaneando')}
             className="mt-5 w-full text-center text-sm transition"
             style={{
-              color: '#8A8272',
+              color: colors.text.secondary,
             }}
           >
             ← Volver a escanear
@@ -228,7 +229,7 @@ function PagoCamion() {
       animate={{ opacity: 1 }}
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 text-[#F0E8D0]"
       style={{
-        background: '#4a4e59',
+        background: colors.background,
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -258,7 +259,7 @@ function PagoCamion() {
         className="relative z-10 w-full max-w-md overflow-hidden rounded-[2rem] border p-8 text-center backdrop-blur-xl"
         style={{
           background: 'rgba(18,18,14,0.72)',
-          borderColor: 'rgba(201,168,76,0.12)',
+          borderColor: colors.brand.goldShadow,
           boxShadow:
             '0 30px 80px -30px rgba(0,0,0,0.65)',
         }}

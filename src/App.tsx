@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Mapa from "./pages/Mapa";
 import PagoCamion from "./pages/PagoCamion";
 import Inicio from "./pages/Inicio";
+import Empleado from "./pages/Empeado";
 
 // App principal con las rutas
 function App() {
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<Inicio />} />
         <Route path="/mapa" element={<Mapa />} />
         <Route path="/pagar" element={<PagoCamion />} />
+        <Route path="/empleado" element={<Empleado />} />
       </Routes>
     </BrowserRouter>
   );

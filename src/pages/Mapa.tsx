@@ -3,6 +3,9 @@ import { motion } from 'framer-motion'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 
+import { rutas } from '../data/rutas'
+
+
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
@@ -21,121 +24,9 @@ declare module 'leaflet' {
 }
 
 import 'leaflet-routing-machine'
+import { colors } from '../utils/theme'
 
 const center: [number, number] = [24.0277, -104.6532]
-
-type RutaData = {
-  color: string
-  nombre: string
-  waypoints: [number, number][]
-}
-
-const rutas: RutaData[] = [
-  {
-    nombre: 'Ruta Naranja',
-    color: '#ef7300',
-    waypoints: [
-      [24.063854, -104.585587],
-      [24.061471, -104.585156],
-      [24.059199, -104.584642],
-      [24.057516, -104.584323],
-      [24.057239, -104.585904],
-      [24.057095, -104.586745],
-      [24.056365, -104.589337],
-      [24.057819, -104.590889],
-      [24.058658, -104.591769],
-      // Solidaridad 
-      [24.058995, -104.592140],
-      [24.059991, -104.593242],
-      [24.061729, -104.595093],
-      [24.062815, -104.596261],
-      [24.064233, -104.597742],
-      [24.065444, -104.599032],
-      [24.066428, -104.600092],
-      // Volkswagen 
-      [24.067207, -104.600904],
-      [24.064215, -104.604782],
-      [24.060394, -104.609075],
-      [24.057455, -104.612300],
-      [24.050703, -104.619853],
-      [24.046106, -104.624950],
-      [24.042040, -104.629431],
-      [24.040245, -104.631428],
-      [24.037658, -104.634369],
-      [24.033504, -104.641839],
-      [24.034291, -104.647950],
-      [24.025622, -104.670489],
-    ],
-  },
-
-  {
-    nombre: 'Ruta Azul',
-    color: '#00328f',
-    waypoints: [
-      [24.004815, -104.652848],
-      [24.008073, -104.651632],
-      [24.008782, -104.654654],
-      [24.014487, -104.656023],
-      [24.018410, -104.656082],
-      [24.017542, -104.652910],
-      [24.017874, -104.651748],
-      [24.021173, -104.651962],
-      [24.027476, -104.652923],
-      [24.030975, -104.653486],
-      [24.034707, -104.652646],
-      [24.034256, -104.648991],
-      [24.030813, -104.646863],
-      [24.031902, -104.641289],
-      [24.028438, -104.644391],
-      [24.026124, -104.645888],
-      [24.020397, -104.645468],
-      [24.019579, -104.655091],
-      [24.017019, -104.649958],
-      [24.017432, -104.651596],
-      //El pechugon 
-      [24.017312, -104.655388],
-      [24.008250, -104.654562],
-      [24.004886, -104.653077],
-      [24.005353, -104.655941],
-      [24.006198, -104.662556],
-    ],
-  },
-
-  {
-    nombre: 'Ruta Morada',
-    color: '#ff01d0',
-    waypoints: [
-      [23.988509, -104.615164],
-      [23.993247, -104.628946],
-      [23.995993, -104.636949],
-      [23.999544, -104.646949],
-      [24.001347, -104.648802],
-      [24.002646, -104.652959],
-      [24.00755, -104.658967],
-      [24.020916, -104.669468],
-      [24.022705, -104.673886],
-    ],
-  },
-
-  {
-    nombre: 'Ruta Verde',
-    color: '#065b00',
-    waypoints: [
-      [24.047139 , -104.684319],
-      [24.045002 , -104.682263],
-      [24.043756 , -104.681070],
-      [24.042323 , -104.682275],
-      [24.038566 , -104.681485],
-      [24.034133 , -104.680295],
-      [24.028907 , -104.680253],
-      [24.020996 , -104.676069],
-      [24.018618 , -104.675487],
-      [24.015081 , -104.675949],
-      [24.013107 , -104.671277],
-      [24.005279 , -104.677027],
-    ]
-  }
-]
 
 type RutaProps = {
   waypoints: [number, number][]
@@ -286,8 +177,12 @@ function Mapa() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen text-[#F0E8D0]"
-      style={{ background: '#4a4e59', fontFamily: "'DM Sans', sans-serif" }}
+      style={{ background: colors.background, fontFamily: "'DM Sans', sans-serif" }}
     >
+
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+      </style>
       {/* FONDO — sin cambios */}
       <motion.div
         animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
@@ -307,24 +202,30 @@ function Mapa() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col items-center text-center"
+          className="mb-2 flex flex-col items-center text-center"
         >
           <div
-            className="mb-4 rounded-full border px-4 py-1.5 text-xs uppercase tracking-[0.25em]"
-            style={{ borderColor: 'rgba(201,168,76,0.3)', color: '#c86a4c', background: 'rgba(201,168,76,0.07)' }}
+            className="mb-1 rounded-full border px-4 py-1.5 text-xs uppercase tracking-[0.25em]"
+            style={{
+              borderColor: colors.brand.goldCardBorder,
+              color: colors.brand.orangeGlow,
+              background: colors.brand.goldSoft,
+              fontFamily: "'Ubuntu', sans-serif",
+            }}
           >
             ⬡ Sistema de Transporte · Durango
           </div>
-          <h1 className="text-4xl font-black sm:text-6xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-4xl font-black sm:text-6xl" 
+          style={{ fontFamily: "'Playfair Display', serif" }}>
             Rutas urbanas{' '}
-            <span style={{ color: '#c86a4c' }}>en tiempo real.</span>
+            <span style={{ color: colors.brand.orange }}>en tiempo real.</span>
           </h1>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: 60 }}
             transition={{ delay: 0.3 }}
             className="my-5 h-0.5"
-            style={{ background: 'linear-gradient(90deg, #c86a4c, transparent)' }}
+            style={{ background: 'linear-gradient(90deg, ' + colors.brand.orange + ', transparent)' }}
           />
           <p className="max-w-2xl text-sm leading-relaxed text-[#ada79c]">
             Consulta las rutas disponibles, encuentra el camión más cercano
@@ -332,12 +233,12 @@ function Mapa() {
           </p>
         </motion.div>
 
-        {/* ✅ LEYENDA — ahora son botones filtrables */}
+        {/* LEYENDA — son botones filtrables */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-5 flex flex-wrap gap-3"
+          className="mb-2 flex flex-wrap gap-3"
         >
           {/* Botón "Todas" */}
           <motion.button
@@ -347,15 +248,15 @@ function Mapa() {
             className="flex items-center gap-3 rounded-2xl border px-4 py-2 backdrop-blur-xl transition-all"
             style={{
               background: rutaActiva === null
-                ? 'rgba(201,168,76,0.18)'
-                : 'rgba(20,20,16,0.55)',
+                ? colors.brand.goldShadow
+                : colors.card.dark,
               borderColor: rutaActiva === null
-                ? 'rgba(201,168,76,0.5)'
-                : 'rgba(201,168,76,0.1)',
+                ? colors.brand.goldCardBorder
+                : colors.brand.goldBorder,
               cursor: 'pointer',
             }}
           >
-            <div className="h-3 w-3 rounded-full bg-[#F0E8D0]"
+            <div className="h-2 w-3 rounded-full bg-[#F0E8D0]"
               style={{ boxShadow: rutaActiva === null ? '0 0 10px #F0E8D0' : 'none' }}
             />
             <span className="text-sm font-semibold text-[#F0E8D0]">Todas</span>
@@ -374,10 +275,10 @@ function Mapa() {
                 style={{
                   background: activa
                     ? `${ruta.color}22`           // fondo tintado con el color de la ruta
-                    : 'rgba(20,20,16,0.55)',
+                    : colors.green.shadow,
                   borderColor: activa
                     ? ruta.color
-                    : 'rgba(201,168,76,0.1)',
+                    : colors.brand.goldBorder,
                   cursor: 'pointer',
                   // ✅ borde más grueso cuando está activa
                   outline: activa ? `1px solid ${ruta.color}` : 'none',
@@ -421,7 +322,7 @@ function Mapa() {
           transition={{ delay: 0.3 }}
           className="overflow-hidden rounded-[2rem] border"
           style={{
-            borderColor: 'rgba(201,168,76,0.12)',
+            borderColor: colors.brand.goldShadow,
             background: 'rgba(10,10,8,0.55)',
             boxShadow: '0 30px 80px -30px rgba(0,0,0,0.65)',
           }}

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { color, motion } from 'framer-motion'
+import { colors } from '../utils/theme'
 
 function Inicio() {
   const navigate = useNavigate()
@@ -31,7 +32,7 @@ function Inicio() {
       transition={{ duration: 0.8 }}
       className="min-h-screen text-[#F0E8D0]"
       style={{
-        background: '#424e51',
+        background: colors.background,
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -54,25 +55,25 @@ function Inicio() {
         }}
       />
 
-      <main className="relative z-10 mx-auto max-w px-6 py-10">
+      <main className="relative z-10 mx-auto max-w px-6 py-6">
 
         {/* NAV */}
         <motion.nav
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="mb-5 flex items-center justify-between border-b pb-5"
-          style={{ borderColor: 'rgba(201,168,76,0.2)' }}
+          className="mb-1 flex items-center justify-between border-b pb-2"
+          style={{ borderColor: colors.brand.goldBorder }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <motion.div
               whileHover={{
                 rotate: 10,
                 scale: 1.1,
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
+              className="flex h-6 w-9 items-center justify-center rounded-full text-lg"
               style={{
-                background: 'linear-gradient(135deg, #4cc98f, #305e7a)',
+                background: colors.gradients.logo,
               }}
             >
               🦂
@@ -87,7 +88,7 @@ function Inicio() {
               style={{
                 fontFamily: "'Ubuntu', sans-serif",
                 fontSize: '2rem',
-                color: '#ce7230',
+                color: colors.brand.orange,
               }}
             >
               Q-Ruta
@@ -114,9 +115,9 @@ function Inicio() {
             }}
             className="mb-2 flex w-fit items-center justify-center gap-2 rounded-full border px-4 py-1.5 text-xs text-white uppercase tracking-[0.25em]"
             style={{
-              borderColor: '#915022',
-              color: '#ce7230',
-              background: 'rgba(201,168,76,0.07)',
+              borderColor: colors.brown.button,
+              color: colors.brand.orange,
+              background: colors.brand.goldSoft,
             }}
           >
             ⬡ Estado de Durango · México
@@ -140,7 +141,7 @@ function Inicio() {
                 duration: 3,
                 repeat: Infinity,
               }}
-              style={{ color: '#ce7230' }}
+              style={{ color: colors.brand.orange }}
             >
               en un toque.
             </motion.em>
@@ -153,14 +154,18 @@ function Inicio() {
             className="my-5 h-0.5"
             style={{
               background:
-                'linear-gradient(90deg, #c86a4c, transparent)',
+                'linear-gradient(90deg, ' + colors.brand.orange + ', transparent)',
             }}
           />
 
           <motion.p
             variants={fadeUp}
             className="mx-auto max-w-xl px-4 text-base leading-relaxed font-light text-white"
+            style={{
+              fontFamily: "'Ubuntu', sans-serif",
+            }}
           >
+
             Consulta rutas en tiempo real y paga tu pasaje sin efectivo.
             Moverse por Durango nunca fue tan sencillo.
           </motion.p>
@@ -181,9 +186,9 @@ function Inicio() {
               desc: 'Localiza tu ruta, sigue el recorrido en el mapa y sabe exactamente dónde estás y a dónde vas.',
               button: '🗺️ Abrir mapa →',
               route: '/mapa',
-              bg: 'linear-gradient(145deg, #1E3A2F 0%, #0E2219 100%)',
-              border: 'rgba(42,92,69,0.6)',
-              shadow: 'rgba(30,58,47,0.5)',
+              bg: colors.gradients.mapaCard,
+              border: colors.green.border,
+              shadow: colors.green.shadow,
               color: '#6FCF97',
             },
             {
@@ -191,12 +196,12 @@ function Inicio() {
               tag: 'Pago sin efectivo',
               title: 'Pagar con código QR',
               desc: 'Genera tu código de pago al instante y aborda sin necesidad de llevar monedas.',
-              button: '💳 Pagar ahora',
+              button: 'Pagar ahora',
               route: '/pagar',
-              bg: 'linear-gradient(145deg, #2A1F00 0%, #1A1200 100%)',
-              border: 'rgba(201,168,76,0.3)',
-              shadow: 'rgba(201,168,76,0.15)',
-              color: '#C9A84C',
+              bg: colors.gradients.pagoCard,
+              border: colors.brand.goldCardBorder,
+              shadow: colors.brand.goldShadow,
+              color: colors.brand.gold,
             },
           ].map((card) => (
             <motion.div
@@ -211,6 +216,7 @@ function Inicio() {
               }}
               className="group relative cursor-pointer overflow-hidden rounded-3xl border p-8"
               style={{
+                fontFamily: "'Ubuntu', sans-serif",
                 background: card.bg,
                 borderColor: card.border,
                 boxShadow: `0 20px 60px -20px ${card.shadow}`,
@@ -254,12 +260,12 @@ function Inicio() {
                 style={{
                   background:
                     card.route === '/mapa'
-                      ? '#2e5c317d'
-                      : '#c86b4ca0',
+                      ? colors.card.green
+                      : colors.card.red,
                   color:
                     card.route === '/mapa'
-                      ? '#6FCF97'
-                      : '#0E0E0A',
+                      ? colors.card.lightGreen
+                      : colors.card.dark,
                 }}
               >
                 {card.button}
