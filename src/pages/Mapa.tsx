@@ -162,6 +162,180 @@ function UbicacionActual() {
 
   return null
 }
+// Calcula distancia en km entre dos coordenadas (fórmula Haversine)
+function haversine([lat1, lon1]: [number, number], [lat2, lon2]: [number, number]): number {
+  const R = 6371
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// Calcula distancia total de la ruta sumando segmentos
+function distanciaRuta(waypoints: [number, number][]): number {
+  let total = 0
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    total += haversine(waypoints[i], waypoints[i + 1])
+  }
+  return total
+}
+
+// Distancia acumulada desde el inicio hasta cada parada
+function distanciasAcumuladas(waypoints: [number, number][]): number[] {
+  const acum = [0]
+  for (let i = 1; i < waypoints.length; i++) {
+    acum.push(acum[i - 1] + haversine(waypoints[i - 1], waypoints[i]))
+  }
+  return acum
+}
+
+const VELOCIDAD_KMH = 25
+const NUM_CAMIONES = 5
+
+// Dado el índice de una parada, estima cuántos minutos faltan para el siguiente camión
+function estimarEspera(
+  paradaIndex: number,
+  waypoints: [number, number][]
+): { minutos: number; label: string } {
+  const totalKm = distanciaRuta(waypoints)
+  // Intervalo entre camiones en horas
+  const intervaloHoras = totalKm / (NUM_CAMIONES * VELOCIDAD_KMH)
+  const intervaloMin = intervaloHoras * 60
+
+  // Posición relativa de esta parada en la ruta (0 a 1)
+  const acum = distanciasAcumuladas(waypoints)
+  const posRelativa = acum[paradaIndex] / totalKm
+
+  // Simulamos una posición aleatoria pero estable del camión más cercano
+  // usando el índice como semilla (para que no cambie en cada render)
+  const seed = (paradaIndex * 7 + waypoints.length * 3) % 100
+  const offsetCamion = (seed / 100) * intervaloMin
+
+  const espera = Math.round(offsetCamion % intervaloMin)
+  const minutos = espera === 0 ? 1 : espera
+
+  let label = ''
+  if (minutos <= 2) label = '🟢 Llegando'
+  else if (minutos <= 7) label = '🟡 Pronto'
+  else label = '🔴 En camino'
+
+  return { minutos, label }
+}
+
+// 1. Crea un ícono personalizado para las paradas
+const iconoParada = (color: string) => L.divIcon({
+  className: '',
+  html: `
+    <div style="
+      width: 12px;
+      height: 12px;
+      background: ${color};
+      border: 2.5px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 6px ${color}99;
+    "></div>
+  `,
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+})
+function ParadasRuta({ waypoints, color, nombre }: RutaProps & { nombre: string }) {
+  const map = useMap()
+  const markersRef = useRef<L.Marker[]>([])
+
+  useEffect(() => {
+    markersRef.current.forEach(m => m.remove())
+    markersRef.current = []
+
+    const totalKm = distanciaRuta(waypoints)
+    const intervaloHoras = totalKm / (NUM_CAMIONES * VELOCIDAD_KMH)
+    const intervaloMin = Math.round(intervaloHoras * 60)
+
+    waypoints.forEach(([lat, lng], i) => {
+      const { minutos, label } = estimarEspera(i, waypoints)
+
+      const esInicio = i === 0
+      const esFin = i === waypoints.length - 1
+
+      // Ícono diferente para inicio, fin y paradas intermedias
+      const iconHtml = esInicio || esFin
+        ? `<div style="
+            width: 16px; height: 16px;
+            background: ${color};
+            border: 3px solid white;
+            border-radius: ${esInicio ? '4px' : '50%'};
+            box-shadow: 0 0 10px ${color};
+          "></div>`
+        : `<div style="
+            width: 11px; height: 11px;
+            background: ${color};
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px ${color}88;
+          "></div>`
+
+      const icono = L.divIcon({
+        className: '',
+        html: iconHtml,
+        iconSize: esInicio || esFin ? [16, 16] : [11, 11],
+        iconAnchor: esInicio || esFin ? [8, 8] : [5.5, 5.5],
+      })
+
+      const marker = L.marker([lat, lng], { icon: icono })
+        .addTo(map)
+        .bindPopup(`
+          <div style="
+            font-family: 'DM Sans', sans-serif;
+            min-width: 160px;
+            padding: 4px 2px;
+          ">
+            <div style="
+              font-weight: 700;
+              font-size: 13px;
+              color: ${color};
+              margin-bottom: 4px;
+            ">
+              ${esInicio ? '🚌 Inicio · ' : esFin ? '🏁 Final · ' : '📍 Parada · '}${nombre}
+            </div>
+            <div style="font-size: 12px; color: #444; margin-bottom: 6px;">
+              Parada ${i + 1} de ${waypoints.length}
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 6px 0;" />
+            <div style="font-size: 12px; color: #555; margin-bottom: 2px;">
+              ⏱ Frecuencia aprox: <strong>cada ${intervaloMin} min</strong>
+            </div>
+            <div style="
+              margin-top: 6px;
+              padding: 5px 10px;
+              border-radius: 20px;
+              background: ${color}18;
+              border: 1px solid ${color}55;
+              font-size: 12px;
+              font-weight: 600;
+              color: #222;
+              text-align: center;
+            ">
+              ${label} · ~${minutos} min
+            </div>
+          </div>
+        `)
+
+      markersRef.current.push(marker)
+    })
+
+    return () => {
+      markersRef.current.forEach(m => m.remove())
+    }
+  }, [map, waypoints, color, nombre])
+
+  return null
+}
+
+
+
 
 function Mapa() {
   // null = todas las rutas visibles, string = solo esa ruta
@@ -335,15 +509,30 @@ function Mapa() {
               />
 
               {/* ✅ Filtra: si hay rutaActiva solo renderiza esa, si no todas */}
-              {rutas
-                .filter(ruta => rutaActiva === null || ruta.nombre === rutaActiva)
-                .map(ruta => (
-                  <RutaCamion
-                    key={ruta.nombre}
-                    waypoints={ruta.waypoints}
-                    color={ruta.color}
-                  />
-                ))}
+              {/* Rutas con líneas — igual que antes */}
+{rutas
+  .filter(ruta => rutaActiva === null || ruta.nombre === rutaActiva)
+  .map(ruta => (
+    <RutaCamion
+      key={ruta.nombre}
+      waypoints={ruta.waypoints}
+      color={ruta.color}
+    />
+  ))}
+
+{/* Paradas encima de las líneas — nuevo */}
+{rutas
+  .filter(ruta => rutaActiva === null || ruta.nombre === rutaActiva)
+  .map(ruta => (
+    <ParadasRuta
+      key={`paradas-${ruta.nombre}`}
+      waypoints={ruta.waypoints}
+      color={ruta.color}
+      nombre={ruta.nombre}
+    />
+  ))}
+
+<UbicacionActual />
 
               <UbicacionActual />
             </MapContainer>
