@@ -1,110 +1,202 @@
 import { useNavigate } from 'react-router-dom';
 
-// Componente del contenido principal
 function Inicio() {
   const navigate = useNavigate();
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
-      <main className="mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col px-6 py-10 sm:px-10">
-        
-        {/* Header con botones superiores */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate('/mapa')}
-              className="rounded-full bg-slate-800 px-5 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700"
-            >
-              🗺️ Ver Mapa
-            </button>
-            <button
-              onClick={() => navigate('/pagar')}
-              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-500"
-            >
-              💳 Pagar camión
-            </button>
-          </div>
-          <div className="text-right text-sm text-slate-400">
-            Transporte oficial de turistas
-          </div>
-        </div>
 
-        <header className="mb-12 flex flex-col items-center text-center gap-6">
-          <span className="rounded-full bg-emerald-500/20 px-4 py-1 text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">
-            Durango
+  return (
+    <div
+      className="min-h-screen text-[#F0E8D0]"
+      style={{
+        background: '#4a4e59',
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      {/* Fondo ambiental */}
+      <div
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.12) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 90% 80%, rgba(30,58,47,0.25) 0%, transparent 60%)
+          `,
+        }}
+      />
+
+      <main className="relative z-10 mx-auto max-w-5xl px-6 py-10">
+
+        {/* NAV */}
+        <nav className="mb-14 flex items-center justify-between border-b pb-5"
+          style={{ borderColor: 'rgba(201,168,76,0.2)' }}>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
+              style={{ background: 'linear-gradient(135deg, #4cc98f, #305e7a)' }}
+            >
+              🦂
+            </div>
+            <span
+              className="text-lg tracking-wide"
+              style={{ fontFamily: "'Playfair Display', serif", color: '#c86a4c' }}
+            >
+              Durango Transit
+            </span>
+          </div>
+          <span className="hidden text-xs uppercase tracking-[0.25em] text-[#8A8272] sm:block">
+            Sistema de Transporte Urbano
           </span>
-          <h1 className="max-w-4xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">
-            Turismo en Durango y transporte en camión para tu próxima aventura
+        </nav>
+
+        {/* HERO */}
+        <header className="mb-14 text-center">
+          <div
+            className="mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs uppercase tracking-[0.25em]"
+            style={{ borderColor: 'rgba(201,168,76,0.4)', color: '#c86a4c', background: 'rgba(201,168,76,0.07)' }}
+          >
+            ⬡ Estado de Durango · México
+          </div>
+          <h1
+            className="mb-3 text-5xl font-black leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            Tu camión,{ ' ' }
+            <em style={{ color: '#c86a4c' }}>en un toque.</em>
           </h1>
-          <p className="max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-            Descubre los principales puntos turísticos del estado y encuentra la mejor ruta en autobús para llegar fácil y seguro a cada destino.
+          {/* Línea dorada decorativa */}
+          <div className="mx-auto my-5 h-0.5 w-12"
+            style={{ background: 'linear-gradient(90deg, #c86a4c, transparent)' }} />
+          <p className="mx-auto max-w-md text-base leading-relaxed font-light text-[#ada79c]">
+            Consulta rutas en tiempo real y paga tu pasaje sin efectivo.
+            Moverse por Durango nunca fue tan sencillo.
           </p>
         </header>
 
-        <section className="grid gap-8 lg:grid-cols-[1.3fr_0.9fr]">
-          <div className="space-y-8">
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.7)] backdrop-blur-xl">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Viaja en autobús por Durango</p>
-                  <h2 className="text-2xl font-semibold text-white">Rutas seguras para turistas en camión</h2>
-                </div>
-                <span className="inline-flex rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-300">
-                  Opciones para viajeros
-                </span>
-              </div>
-              <p className="mt-4 text-slate-300">
-                Conoce terminales, horarios y conexiones entre Durango capital y los principales atractivos turísticos. Ideal para planificar tu viaje en camión sin complicaciones.
-              </p>
-            </div>
+        {/* CARDS PRINCIPALES */}
+        <section className="mb-4 grid gap-4 sm:grid-cols-2">
+          {/* Rutas */}
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-3xl border p-8 transition-all duration-300 hover:-translate-y-1"
+            style={{
+              background: 'linear-gradient(145deg, #1E3A2F 0%, #0E2219 100%)',
+              borderColor: 'rgba(42,92,69,0.6)',
+              boxShadow: '0 20px 60px -20px rgba(30,58,47,0.5)',
+            }}
+            onClick={() => navigate('/mapa')}
+          >
+            <span className="pointer-events-none absolute bottom-3 right-5 text-[5rem] opacity-10">🗺️</span>
+            <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#6FCF97]">
+              Transporte urbano
+            </p>
+            <h2
+              className="mb-3 text-3xl font-bold leading-snug"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Ver rutas de camión
+            </h2>
+            <p className="mb-7 text-sm font-light leading-relaxed text-[#F0E8D0]/50">
+              Localiza tu ruta, sigue el recorrido en el mapa y sabe exactamente
+              dónde estás y a dónde vas.
+            </p>
+            <button
+              className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+              style={{
+                background: '#2e5c317d',
+                borderColor: 'rgba(111,207,151,0.3)',
+                color: '#6FCF97',
+              }}
+            >
+              🗺️ Abrir mapa →
+            </button>
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-6 text-left shadow-lg shadow-black/20">
-                <h3 className="text-xl font-semibold text-white">Buscar ruta de camión</h3>
-                <p className="mt-3 text-slate-400">Encuentra rutas directas y conectadas entre la CD Durango, Gómez Palacio, el Valle del Guadiana y los principales pueblos mágicos.</p>
-                <button 
-                  onClick={() => navigate('/mapa')}
-                  className="mt-4 text-sm text-emerald-400 hover:text-emerald-300"
-                >
-                  Ver mapa →
-                </button>
-              </article>
-              <article className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-6 text-left shadow-lg shadow-black/20">
-                <h3 className="text-xl font-semibold text-white">Puntos turísticos</h3>
-                <p className="mt-3 text-slate-400">Explora iconos como la Catedral, el Museo de Arqueología, el Parque Guadiana y los paisajes del Cañón del Sombrerete.</p>
-              </article>
-              <article className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-6 text-left shadow-lg shadow-black/20">
-                <h3 className="text-xl font-semibold text-white">Conexiones fáciles</h3>
-                <p className="mt-3 text-slate-400">Descubre cómo combinar transporte en camión con recorridos guiados para aprovechar cada parada del viaje.</p>
-              </article>
-              <article className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-6 text-left shadow-lg shadow-black/20">
-                <h3 className="text-xl font-semibold text-white">Consejos para viajeros</h3>
-                <p className="mt-3 text-slate-400">Asegura tu traslado con anticipación, revisa horarios de salidas y lleva efectivo para terminales locales y paradas rurales.</p>
-              </article>
-            </div>
+          {/* Pagar */}
+          <div
+            className="group relative cursor-pointer overflow-hidden rounded-3xl border p-8 transition-all duration-300 hover:-translate-y-1"
+            style={{
+              background: 'linear-gradient(145deg, #2A1F00 0%, #1A1200 100%)',
+              borderColor: 'rgba(201,168,76,0.3)',
+              boxShadow: '0 20px 60px -20px rgba(201,168,76,0.15)',
+            }}
+            onClick={() => navigate('/pagar')}
+          >
+            <span className="pointer-events-none absolute bottom-3 right-5 text-[5rem] opacity-10">💳</span>
+            <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#C9A84C]">
+              Pago sin efectivo
+            </p>
+            <h2
+              className="mb-3 text-3xl font-bold leading-snug"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Pagar con código QR
+            </h2>
+            <p className="mb-7 text-sm font-light leading-relaxed text-[#F0E8D0]/50">
+              Genera tu código de pago al instante y aborda sin necesidad de
+              llevar monedas ni cambio exacto.
+            </p>
+            <button
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition hover:brightness-110"
+              style={{ background: '#c86b4ca0', color: '#0E0E0A' }}
+            >
+              💳 Pagar ahora
+            </button>
           </div>
         </section>
 
-        <section className="mt-10 flex flex-col gap-5 rounded-[2rem] border border-white/10 bg-white/5 p-8 text-slate-200 shadow-[0_20px_50px_-25px_rgba(15,23,42,0.8)] sm:flex-row sm:items-center sm:justify-between backdrop-blur-sm">
+        {/* CARDS SECUNDARIAS */}
+        <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { icon: '📍', title: 'Mi ubicación', desc: 'El mapa detecta tu posición y te muestra las rutas más cercanas disponibles.' },
+            { icon: '🕐', title: 'Horarios', desc: 'Consulta frecuencias y horarios estimados de cada ruta durante el día.' },
+            { icon: '🎫', title: 'Historial de pagos', desc: 'Revisa tus últimos viajes y el monto gastado en transporte este mes.' },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-2xl border p-6 transition-colors"
+              style={{
+                background: '#1A1A12',
+                borderColor: 'rgba(201,168,76,0.1)',
+              }}
+            >
+              <span className="mb-3 block text-2xl">{item.icon}</span>
+              <h3 className="mb-2 text-sm font-semibold text-[#F0E8D0]">{item.title}</h3>
+              <p className="text-xs font-light leading-relaxed text-[#8A8272]">{item.desc}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* BANNER INFERIOR */}
+        <section
+          className="flex flex-col items-start justify-between gap-5 rounded-3xl border p-8 sm:flex-row sm:items-center"
+          style={{
+            background: 'linear-gradient(100deg, rgba(201,168,76,0.08) 0%, rgba(30,58,47,0.12) 100%)',
+            borderColor: 'rgba(201,168,76,0.18)',
+          }}
+        >
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-emerald-300">Elige tu siguiente parada</p>
-            <p className="mt-3 text-lg font-medium text-white">Selecciona si quieres buscar una ruta de autobús o explorar los lugares turísticos más destacados.</p>
+            <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#c86a4c]">
+              ¿Listo para moverte?
+            </p>
+            <p className="max-w-md text-sm leading-relaxed text-[#F0E8D0]/75">
+              Elige ver las rutas disponibles en el mapa o paga tu camión de forma rápida y segura.
+            </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-shrink-0 gap-3">
             <button
               onClick={() => navigate('/mapa')}
-              className="inline-flex justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400"
+              className="rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+              style={{ borderColor: '#c86a4c', color: '#c86a4c', background: 'transparent' }}
             >
-              Encontrar ruta de camión
+              Ver mapa
             </button>
             <button
               onClick={() => navigate('/pagar')}
-              className="inline-flex justify-center rounded-full border border-emerald-500/50 bg-transparent px-6 py-3 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/10"
+              className="rounded-full px-5 py-2.5 text-sm font-semibold transition hover:brightness-110"
+              style={{ background: '#c86a4c', color: '#0E0E0A', border: '1px solid #c86a4c' }}
             >
-              Pagar camión con QR
+              💳 Pagar
             </button>
           </div>
         </section>
+
       </main>
     </div>
   );
