@@ -98,6 +98,18 @@ function Inicio() {
           <span className="hidden text-xs uppercase tracking-[0.25em] text-white sm:block">
             Sistema de Transporte Urbano
           </span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate('/login')}
+            className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition"
+            style={{
+              background: colors.brand.gold,
+              color: '#1A1200',
+            }}
+          >
+            Iniciar sesión
+          </motion.button>
         </motion.nav>
 
         {/* HERO */}

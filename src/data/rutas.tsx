@@ -4,16 +4,20 @@ export type RutaData = {
     color: string
     estado: 'Activa' | 'Mantenimiento'
     pasajeros: number
+    camiones: number
+    capacidad: number
     waypoints: [number, number][]
 }
 
-export const rutas: RutaData[] = [
+export const rutasIniciales: RutaData[] = [
     {
         id: 1,
         nombre: 'Ruta Naranja',
         color: '#ef7300',
         estado: 'Activa',
         pasajeros: 320,
+        camiones: 4,
+        capacidad: 30,
         waypoints: [
             [24.063854, -104.585587],
             [24.061471, -104.585156],
@@ -51,6 +55,8 @@ export const rutas: RutaData[] = [
         color: '#00328f',
         estado: 'Activa',
         pasajeros: 210,
+        camiones: 3,
+        capacidad: 30,
         waypoints: [
             [24.004815, -104.652848],
             [24.008073, -104.651632],
@@ -85,6 +91,8 @@ export const rutas: RutaData[] = [
         color: '#ff01d0',
         estado: 'Activa',
         pasajeros: 175,
+        camiones: 2,
+        capacidad: 30,
         waypoints: [
             [23.988509, -104.615164],
             [23.993247, -104.628946],
@@ -103,6 +111,8 @@ export const rutas: RutaData[] = [
         color: '#065b00',
         estado: 'Mantenimiento',
         pasajeros: 90,
+        camiones: 3,
+        capacidad: 25,
         waypoints: [
             [24.047139, -104.684319],
             [24.045002, -104.682263],
