@@ -1,175 +1,205 @@
 export type RutaData = {
-    id: number
-    nombre: string
-    color: string
-    estado: 'Activa' | 'Mantenimiento'
-    pasajeros: number
-    camiones: number
-    capacidad: number
-    waypoints: [number, number][]
-}
+  id: number;
+  nombre: string;
+  color: string;
+  estado: "Activa" | "Mantenimiento";
+  pasajeros: number;
+  camiones: number;
+  capacidad: number;
+  waypoints: [number, number][];
+};
 
 export type PuntoTuristico = {
-    id: number
-    nombre: string
-    descripcion: string
-    categoria: 'Cultural' | 'Natural' | 'Gastronómico' | 'Recreativo'
-    coordenadas: [number, number]
-    color: string
-}
+  id: number;
+  nombre: string;
+  descripcion: string;
+  categoria:
+    | "Cultural"
+    | "Natural"
+    | "Gastronómico"
+    | "Plaza"
+    | "Iglesia"
+    | "Parque"
+    | "Recreativo";
+  coordenadas: [number, number];
+};
 
 export const rutasIniciales: RutaData[] = [
-    {
-        id: 1,
-        nombre: 'Ruta Naranja',
-        color: '#ef7300',
-        estado: 'Activa',
-        pasajeros: 320,
-        camiones: 4,
-        capacidad: 30,
-        waypoints: [
-            [24.063854, -104.585587],
-            [24.061471, -104.585156],
-            [24.059199, -104.584642],
-            [24.057516, -104.584323],
-            [24.057239, -104.585904],
-            [24.057095, -104.586745],
-            [24.056365, -104.589337],
-            [24.057819, -104.590889],
-            [24.058658, -104.591769],
-            [24.058995, -104.592140],
-            [24.059991, -104.593242],
-            [24.061729, -104.595093],
-            [24.062815, -104.596261],
-            [24.064233, -104.597742],
-            [24.065444, -104.599032],
-            [24.066428, -104.600092],
-            [24.067207, -104.600904],
-            [24.064215, -104.604782],
-            [24.060394, -104.609075],
-            [24.057455, -104.612300],
-            [24.050703, -104.619853],
-            [24.046106, -104.624950],
-            [24.042040, -104.629431],
-            [24.040245, -104.631428],
-            [24.037658, -104.634369],
-            [24.033504, -104.641839],
-            [24.034291, -104.647950],
-            [24.025622, -104.670489],
-        ],
-    },
-    {
-        id: 2,
-        nombre: 'Ruta Azul',
-        color: '#00328f',
-        estado: 'Activa',
-        pasajeros: 210,
-        camiones: 3,
-        capacidad: 30,
-        waypoints: [
-            [24.004815, -104.652848],
-            [24.008073, -104.651632],
-            [24.008782, -104.654654],
-            [24.014487, -104.656023],
-            [24.018410, -104.656082],
-            [24.017542, -104.652910],
-            [24.017874, -104.651748],
-            [24.021173, -104.651962],
-            [24.027476, -104.652923],
-            [24.030975, -104.653486],
-            [24.034707, -104.652646],
-            [24.034256, -104.648991],
-            [24.030813, -104.646863],
-            [24.031902, -104.641289],
-            [24.028438, -104.644391],
-            [24.026124, -104.645888],
-            [24.020397, -104.645468],
-            [24.019579, -104.655091],
-            [24.017019, -104.649958],
-            [24.017432, -104.651596],
-            [24.017312, -104.655388],
-            [24.008250, -104.654562],
-            [24.004886, -104.653077],
-            [24.005353, -104.655941],
-            [24.006198, -104.662556],
-        ],
-    },
-    {
-        id: 3,
-        nombre: 'Ruta Morada',
-        color: '#ff01d0',
-        estado: 'Activa',
-        pasajeros: 175,
-        camiones: 2,
-        capacidad: 30,
-        waypoints: [
-            [23.988509, -104.615164],
-            [23.993247, -104.628946],
-            [23.995993, -104.636949],
-            [23.999544, -104.646949],
-            [24.001347, -104.648802],
-            [24.002646, -104.652959],
-            [24.007550, -104.658967],
-            [24.020916, -104.669468],
-            [24.022705, -104.673886],
-        ],
-    },
-    {
-        id: 4,
-        nombre: 'Ruta Verde',
-        color: '#065b00',
-        estado: 'Mantenimiento',
-        pasajeros: 90,
-        camiones: 3,
-        capacidad: 25,
-        waypoints: [
-            [24.047139, -104.684319],
-            [24.045002, -104.682263],
-            [24.043756, -104.681070],
-            [24.042323, -104.682275],
-            [24.038566, -104.681485],
-            [24.034133, -104.680295],
-            [24.028907, -104.680253],
-            [24.020996, -104.676069],
-            [24.018618, -104.675487],
-            [24.015081, -104.675949],
-            [24.013107, -104.671277],
-            [24.005279, -104.677027],
-        ],
-    },
-]
-
-export const puntosTuristicos: PuntoTuristico[] = [
-    {
+  {
     id: 1,
-    nombre: 'Catedral Basílica',
-    descripcion: 'Uno de los sitios históricos más importantes de Durango.',
-    categoria: 'Cultural',
-    coordenadas: [24.024859, -104.670308],
-    color: '#d4af37',
+    nombre: "Ruta Naranja",
+    color: "#ef7300",
+    estado: "Activa",
+    pasajeros: 320,
+    camiones: 4,
+    capacidad: 30,
+    waypoints: [
+      [24.063854, -104.585587],
+      [24.061471, -104.585156],
+      [24.059199, -104.584642],
+      [24.057516, -104.584323],
+      [24.057239, -104.585904],
+      [24.057095, -104.586745],
+      [24.056365, -104.589337],
+      [24.057819, -104.590889],
+      [24.058658, -104.591769],
+      [24.058995, -104.59214],
+      [24.059991, -104.593242],
+      [24.061729, -104.595093],
+      [24.062815, -104.596261],
+      [24.064233, -104.597742],
+      [24.065444, -104.599032],
+      [24.066428, -104.600092],
+      [24.067207, -104.600904],
+      [24.064215, -104.604782],
+      [24.060394, -104.609075],
+      [24.057455, -104.6123],
+      [24.050703, -104.619853],
+      [24.046106, -104.62495],
+      [24.04204, -104.629431],
+      [24.040245, -104.631428],
+      [24.037658, -104.634369],
+      [24.033504, -104.641839],
+      [24.034291, -104.64795],
+      [24.025622, -104.670489],
+    ],
   },
   {
     id: 2,
-    nombre: 'Parque Guadiana',
-    descripcion: 'Parque tradicional ideal para caminar y descansar.',
-    categoria: 'Natural',
-    coordenadas: [24.024806, -104.686666],
-    color: '#2e8b57',
+    nombre: "Ruta Azul",
+    color: "#00328f",
+    estado: "Activa",
+    pasajeros: 210,
+    camiones: 3,
+    capacidad: 30,
+    waypoints: [
+      [24.004815, -104.652848],
+      [24.008073, -104.651632],
+      [24.008782, -104.654654],
+      [24.014487, -104.656023],
+      [24.01841, -104.656082],
+      [24.017542, -104.65291],
+      [24.017874, -104.651748],
+      [24.021173, -104.651962],
+      [24.027476, -104.652923],
+      [24.030975, -104.653486],
+      [24.034707, -104.652646],
+      [24.034256, -104.648991],
+      [24.030813, -104.646863],
+      [24.031902, -104.641289],
+      [24.028438, -104.644391],
+      [24.026124, -104.645888],
+      [24.020397, -104.645468],
+      [24.019579, -104.655091],
+      [24.017019, -104.649958],
+      [24.017432, -104.651596],
+      [24.017312, -104.655388],
+      [24.00825, -104.654562],
+      [24.004886, -104.653077],
+      [24.005353, -104.655941],
+      [24.006198, -104.662556],
+    ],
   },
   {
     id: 3,
-    nombre: 'Teleférico',
-    descripcion: 'Vista panorámica de la ciudad.',
-    categoria: 'Natural',
-    coordenadas: [24.021792, -104.682810],
-    color: '#3acf11',
+    nombre: "Ruta Morada",
+    color: "#ff01d0",
+    estado: "Activa",
+    pasajeros: 175,
+    camiones: 2,
+    capacidad: 30,
+    waypoints: [
+      [23.988509, -104.615164],
+      [23.993247, -104.628946],
+      [23.995993, -104.636949],
+      [23.999544, -104.646949],
+      [24.001347, -104.648802],
+      [24.002646, -104.652959],
+      [24.00755, -104.658967],
+      [24.020916, -104.669468],
+      [24.022705, -104.673886],
+    ],
   },
   {
     id: 4,
-    nombre: 'Museo Túnel de Minería',
-    descripcion: 'Museo subterráneo sobre la historia minera.',
-    categoria: 'Cultural',
-    coordenadas: [24.023954, -104.669946],
-    color: '#9b59b6',
+    nombre: "Ruta Verde",
+    color: "#065b00",
+    estado: "Mantenimiento",
+    pasajeros: 90,
+    camiones: 3,
+    capacidad: 25,
+    waypoints: [
+      [24.047139, -104.684319],
+      [24.045002, -104.682263],
+      [24.043756, -104.68107],
+      [24.042323, -104.682275],
+      [24.038566, -104.681485],
+      [24.034133, -104.680295],
+      [24.028907, -104.680253],
+      [24.020996, -104.676069],
+      [24.018618, -104.675487],
+      [24.015081, -104.675949],
+      [24.013107, -104.671277],
+      [24.005279, -104.677027],
+    ],
   },
-]
+];
+
+export const puntosTuristicos: PuntoTuristico[] = [
+  {
+    id: 1,
+    nombre: "Catedral Basílica",
+    descripcion: "Uno de los sitios históricos más importantes de Durango.",
+    categoria: "Iglesia",
+    coordenadas: [24.024859, -104.670308],
+  },
+  {
+    id: 2,
+    nombre: "Parque Guadiana",
+    descripcion: "Parque tradicional ideal para caminar y descansar.",
+    categoria: "Parque",
+    coordenadas: [24.024806, -104.686666],
+  },
+  {
+    id: 3,
+    nombre: "Teleférico",
+    descripcion: "Vista panorámica de la ciudad.",
+    categoria: "Natural",
+    coordenadas: [24.021792, -104.68281],
+  },
+  {
+    id: 4,
+    nombre: "Museo Túnel de Minería",
+    descripcion: "Museo subterráneo sobre la historia minera.",
+    categoria: "Cultural",
+    coordenadas: [24.023954, -104.669946],
+  },
+  {
+    id: 5,
+    nombre: "Parque Zahuatoba",
+    descripcion: "Parque tradicional ideal para caminar y descansar.",
+    categoria: "Parque",
+    coordenadas: [24.022031, -104.694726],
+  },
+  {
+    id: 6,
+    nombre: "Plazuela Baca Ortiz",
+    descripcion: "Parque tradicional ideal para caminar y descansar.",
+    categoria: "Plaza",
+    coordenadas: [24.020821, -104.668742],
+  },
+  {
+    id: 7,
+    nombre: "Estadio de Béisbol Francisco Villa",
+    descripcion: "Estadio de béisbol con capacidad para 4,000 espectadores.",
+    categoria: "Recreativo",
+    coordenadas: [24.016132, -104.689357],
+  },
+  {
+    id: 8,
+    nombre: "Museo Interactivo Bebeleche",
+    descripcion: "Centro para niños, con películas 3D, experimentos interactivos, juegos tranquilos y estructuras de alpinismo.",
+    categoria: "Recreativo",
+    coordenadas: [24.021009, -104.690895],
+  },
+];

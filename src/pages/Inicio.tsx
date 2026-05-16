@@ -273,6 +273,7 @@ function Inicio() {
               <motion.button
                 whileHover={{ y: -2, borderColor: colors.terra.DEFAULT, color: colors.terra.DEFAULT }}
                 whileTap={{ scale: 0.97 }}
+                onClick={() => navigate('/pagar')}
                 style={{
                   background: 'transparent', border: `1.5px solid ${colors.border}`,
                   borderRadius: 999, padding: '12px 26px', fontSize: 14, fontWeight: 500,
@@ -280,7 +281,7 @@ function Inicio() {
                   display: 'flex', alignItems: 'center', gap: 7, transition: 'all .15s',
                 }}
               >
-                📍 Turismo
+                💳 Pagar
               </motion.button>
             </motion.div>
 

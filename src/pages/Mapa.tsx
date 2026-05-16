@@ -13,6 +13,7 @@ import RutaCamion from "../componentes/mapa/RutaCamion";
 import ParadasRuta from "../componentes/mapa/ParadasRuta";
 import UbicacionActual from "../componentes/mapa/UbicacionActual";
 import { puntosTuristicos } from "../data/rutas";
+import L from "leaflet";
 
 const CENTER: [number, number] = [24.0277, -104.6532];
 
@@ -25,6 +26,40 @@ const stagger: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
 };
+
+const categoriaEmoji: Record<string, string> = {
+  Cultural: '🏛️',
+  Parque: '🌳',
+  Iglesia: '⛪',
+  Natural: '🏞️',
+  Gastronómico: '🍴',
+  Plaza: '📍',
+  Recreativo: '🎡',
+}
+
+const crearIconoTuristico = (categoria: string) => {
+  const emoji = categoriaEmoji[categoria] || '📍'
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div
+        style="
+          font-size: 28px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
+        "
+      >
+        ${emoji}
+      </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30],
+  })
+}
 
 function Mapa() {
   const navigate = useNavigate();
@@ -553,7 +588,11 @@ function Mapa() {
                 />
               ))}
               {puntosTuristicos.map((punto) => (
-                <Marker key={punto.id} position={punto.coordenadas}>
+                <Marker
+                  key={punto.id}
+                  position={punto.coordenadas}
+                  icon={crearIconoTuristico(punto.categoria)}
+                >
                   <Popup>
                     <div>
                       <h3>{punto.nombre}</h3>

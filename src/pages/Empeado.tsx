@@ -1,229 +1,399 @@
-import { colors } from '../utils/theme'
-import { Bar } from 'react-chartjs-2'
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
   Tooltip,
-} from 'chart.js'
+} from "chart.js";
+import { MapContainer, useMap, TileLayer } from "react-leaflet";
+import L from "leaflet";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase/config";
+import { useAuth } from "../hooks/useAuth";
+import { useRutas } from "../hooks/useRutas";
+import { type RutaData } from "../data/rutas";
+import { colors } from "../utils/theme";
 
-import { type RutaData } from '../data/rutas'
-import { useRutas } from '../hooks/useRutas'
-import { MapContainer, useMap, TileLayer } from 'react-leaflet'
-import { useEffect, useRef, useState } from 'react'
-import L from 'leaflet'
-import { signOut } from 'firebase/auth'
-import { auth } from '../firebase/config'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
+/* ─── Tokens locales del dashboard (light) ───────── */
+const C = {
+  bg: colors.background, // #FBF4E8
+  surface: colors.surface, // #FFFDF6
+  surfaceAlt: colors.surfaceAlt, // #F5EDD8
+  border: colors.border, // #E8D8BB
+  borderSoft: colors.borderSoft,
+  terra: colors.terra.DEFAULT, // #C04E2E
+  terraGlow: colors.terra.glow,
+  terraL: colors.terra.light,
+  terraSoft: colors.terra.soft,
+  gold: colors.gold.DEFAULT, // #C97C12
+  goldSoft: colors.gold.soft,
+  pine: colors.pine.DEFAULT, // #3D7355
+  pineSoft: colors.pine.soft,
+  sky: colors.sky.DEFAULT, // #3D82A8
+  skySoft: colors.sky.soft,
+  text: colors.text.primary, // #2C1A0E
+  textMid: colors.text.secondary, // #7A5840
+  textMuted: colors.text.muted, // #BFA080
+};
 
-// Datos demo
-const congestionHoras = [
-  { hora: '6 AM', nivel: 40 },
-  { hora: '8 AM', nivel: 95 },
-  { hora: '10 AM', nivel: 55 },
-  { hora: '1 PM', nivel: 70 },
-  { hora: '6 PM', nivel: 100 },
-  { hora: '9 PM', nivel: 35 },
-]
+/* ─── Motion variants ────────────────────────────── */
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+const stagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
 
-const usoDiario = [45, 60, 75, 90, 70, 95, 80]
-const dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+/* ─── Demo data ──────────────────────────────────── */
+const CONGESTION_HORAS = [
+  { hora: "6 AM", nivel: 40 },
+  { hora: "8 AM", nivel: 95 },
+  { hora: "10 AM", nivel: 55 },
+  { hora: "1 PM", nivel: 70 },
+  { hora: "6 PM", nivel: 100 },
+  { hora: "9 PM", nivel: 35 },
+];
+const USO_DIARIO = [45, 60, 75, 90, 70, 95, 80];
+const DIAS = ["L", "M", "X", "J", "V", "S", "D"];
 
-// Helpers
+/* ─── Helpers ────────────────────────────────────── */
 function nivelColor(n: number) {
-  if (n >= 85) return colors.brand.gold
-  if (n >= 60) return colors.brand.orange
-  return colors.green.primary
+  if (n >= 85) return C.terra;
+  if (n >= 60) return C.gold;
+  return C.pine;
 }
 
-// Card reutilizable
+function nivelBg(n: number) {
+  if (n >= 85) return C.terraSoft;
+  if (n >= 60) return C.goldSoft;
+  return C.pineSoft;
+}
+
+/* ─── StatCard ───────────────────────────────────── */
 function StatCard({
   label,
   value,
   sub,
-  accent = false,
+  icon,
+  accent = "terra",
 }: {
-  label: string
-  value: string
-  sub: string
-  accent?: boolean
+  label: string;
+  value: string;
+  sub: string;
+  icon: string;
+  accent?: "terra" | "gold" | "pine" | "sky";
 }) {
+  const accentMap = {
+    terra: { color: C.terra, soft: C.terraSoft, border: C.terraL },
+    gold: { color: C.gold, soft: C.goldSoft, border: colors.gold.border },
+    pine: { color: C.pine, soft: C.pineSoft, border: colors.pine.border },
+    sky: { color: C.sky, soft: C.skySoft, border: colors.sky.border },
+  };
+  const a = accentMap[accent];
+
   return (
-    <div
-      className="rounded-2xl p-5"
+    <motion.div
+      variants={fadeUp}
+      whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(44,26,14,0.10)" }}
       style={{
-        background: colors.brown.darker,
-        border: `0.5px solid ${colors.brand.goldBorder}`,
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 20,
+        padding: "20px 18px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Top bar accent */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: a.color,
+          borderRadius: "20px 20px 0 0",
+        }}
+      />
+      {/* Icon badge */}
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: a.soft,
+          border: `1px solid ${a.border}`,
+          fontSize: 18,
+          marginBottom: 12,
+        }}
+      >
+        {icon}
+      </div>
       <p
-        className="mb-2 text-xs uppercase tracking-widest"
-        style={{ color: colors.text.muted }}
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: ".2em",
+          textTransform: "uppercase",
+          color: C.textMuted,
+          marginBottom: 6,
+        }}
       >
         {label}
       </p>
-
       <p
-        className="text-3xl font-bold leading-none"
         style={{
-          color: accent
-            ? colors.brand.gold
-            : colors.text.primary,
+          fontFamily: "'Playfair Display', serif",
+          fontSize: 30,
+          fontWeight: 700,
+          color: C.text,
+          lineHeight: 1,
+          marginBottom: 6,
         }}
       >
         {value}
       </p>
-
-      <p
-        className="mt-2 text-xs"
-        style={{ color: colors.text.muted }}
-      >
-        {sub}
-      </p>
-    </div>
-  )
+      <p style={{ fontSize: 12, color: C.textMuted, fontWeight: 300 }}>{sub}</p>
+    </motion.div>
+  );
 }
 
+/* ─── LineaRuta (Leaflet) ────────────────────────── */
 function LineaRuta({
   waypoints,
   color,
 }: {
-  waypoints: [number, number][]
-  color: string
+  waypoints: [number, number][];
+  color: string;
 }) {
-  const map = useMap()
-  const lineRef = useRef<L.Polyline | null>(null)
-
+  const map = useMap();
+  const lineRef = useRef<L.Polyline | null>(null);
   useEffect(() => {
-    lineRef.current?.remove()
+    lineRef.current?.remove();
     const linea = L.polyline(waypoints, {
       color,
       weight: 5,
       opacity: 0.9,
-    }).addTo(map)
-
-    // Ajusta el zoom para que entre toda la ruta
-    map.fitBounds(linea.getBounds(), { padding: [20, 20] })
-    lineRef.current = linea
-
-    return () => { linea.remove() }
-  }, [map, waypoints, color])
-
-  return null
+    }).addTo(map);
+    map.fitBounds(linea.getBounds(), { padding: [20, 20] });
+    lineRef.current = linea;
+    return () => {
+      linea.remove();
+    };
+  }, [map, waypoints, color]);
+  return null;
 }
 
+/* ─── ModalEditar ────────────────────────────────── */
 function ModalEditar({
   ruta,
   onClose,
   onGuardar,
 }: {
-  ruta: RutaData
-  onClose: () => void
-  onGuardar: (id: number, nuevoEstado: 'Activa' | 'Mantenimiento') => void
+  ruta: RutaData;
+  onClose: () => void;
+  onGuardar: (id: number, nuevoEstado: "Activa" | "Mantenimiento") => void;
 }) {
-  const [estado, setEstado] = useState<'Activa' | 'Mantenimiento'>(ruta.estado)
-  const cambio = estado !== ruta.estado
+  const [estado, setEstado] = useState<"Activa" | "Mantenimiento">(ruta.estado);
+  const cambio = estado !== ruta.estado;
 
   return (
-    // Overlay
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "rgba(44,26,14,0.55)",
+        backdropFilter: "blur(6px)",
+      }}
       onClick={onClose}
     >
-      {/* Panel — detiene propagación para no cerrar al hacer clic adentro */}
-      <div
-        className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl"
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.97 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
-          background: colors.brown.darker,
-          border: `1px solid ${colors.brand.goldBorder}`,
+          position: "relative",
+          width: "100%",
+          maxWidth: 520,
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 28,
+          padding: 28,
+          boxShadow: "0 32px 80px rgba(44,26,14,0.2)",
+          maxHeight: "90vh",
+          overflowY: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Botón cerrar */}
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 text-lg leading-none transition hover:opacity-60"
-          style={{ color: colors.text.muted }}
+          style={{
+            position: "absolute",
+            right: 20,
+            top: 20,
+            fontSize: 18,
+            color: C.textMuted,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            lineHeight: 1,
+            padding: 4,
+          }}
         >
           ✕
         </button>
 
-        {/* Título */}
-        <div className="mb-5 flex items-center gap-3">
+        {/* Title */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 22,
+          }}
+        >
           <div
-            className="h-3 w-3 rounded-full flex-shrink-0"
-            style={{ background: ruta.color, boxShadow: `0 0 8px ${ruta.color}` }}
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              background: ruta.color,
+              boxShadow: `0 0 8px ${ruta.color}`,
+              flexShrink: 0,
+            }}
           />
-          <h2 className="text-lg font-bold" style={{ color: colors.text.primary }}>
+          <h2
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 20,
+              fontWeight: 700,
+              color: C.text,
+            }}
+          >
             Editar · {ruta.nombre}
           </h2>
         </div>
 
-        {/* Toggle de estado */}
-        <p className="mb-2 text-xs uppercase tracking-widest" style={{ color: colors.text.muted }}>
+        {/* Estado toggle */}
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: ".25em",
+            textTransform: "uppercase",
+            color: C.textMuted,
+            marginBottom: 10,
+          }}
+        >
           Estado de la ruta
         </p>
-        <div className="mb-5 flex gap-3">
-          {(['Activa', 'Mantenimiento'] as const).map(op => {
-            const seleccionado = estado === op
-            const esActiva = op === 'Activa'
+        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          {(["Activa", "Mantenimiento"] as const).map((op) => {
+            const sel = estado === op;
+            const isActive = op === "Activa";
             return (
-              <button
+              <motion.button
                 key={op}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setEstado(op)}
-                className="flex-1 rounded-2xl py-3 text-sm font-semibold transition"
                 style={{
-                  background: seleccionado
-                    ? esActiva ? 'rgba(111,207,151,0.2)' : 'rgba(201,168,76,0.15)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: seleccionado
-                    ? `1.5px solid ${esActiva ? colors.green.primary : colors.brand.gold}`
-                    : `1px solid ${colors.brand.goldBorder}`,
-                  color: seleccionado
-                    ? esActiva ? colors.green.primary : colors.brand.gold
-                    : colors.text.muted,
+                  flex: 1,
+                  borderRadius: 14,
+                  padding: "10px 0",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  background: sel
+                    ? isActive
+                      ? C.pineSoft
+                      : C.goldSoft
+                    : C.surfaceAlt,
+                  border: `1.5px solid ${sel ? (isActive ? C.pine : C.gold) : C.border}`,
+                  color: sel ? (isActive ? C.pine : C.gold) : C.textMid,
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: "all .15s",
                 }}
               >
-                {esActiva ? '🟢 Activa' : '🔧 Mantenimiento'}
-              </button>
-            )
+                {isActive ? "🟢 Activa" : "🔧 Mantenimiento"}
+              </motion.button>
+            );
           })}
         </div>
 
-        {/* Aviso visual si hay cambio pendiente */}
-        {cambio && (
-          <div
-            className="mb-4 rounded-xl px-4 py-2 text-xs"
-            style={{
-              background: 'rgba(201,168,76,0.1)',
-              border: `1px solid ${colors.brand.goldBorder}`,
-              color: colors.brand.gold,
-            }}
-          >
-            ⚠️ Cambiarás el estado de <strong>{ruta.nombre}</strong> a{' '}
-            <strong>{estado}</strong>. Esto afectará el mapa y las paradas.
-          </div>
-        )}
+        {/* Warning */}
+        <AnimatePresence>
+          {cambio && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{
+                background: C.goldSoft,
+                border: `1px solid ${colors.gold.border}`,
+                borderRadius: 12,
+                padding: "10px 14px",
+                fontSize: 12,
+                color: C.gold,
+                marginBottom: 16,
+              }}
+            >
+              ⚠️ Cambiarás <strong>{ruta.nombre}</strong> a{" "}
+              <strong>{estado}</strong>. Esto afecta el mapa y las paradas.
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/*  Mini mapa  */}
-        <p className="mb-2 text-xs uppercase tracking-widest" style={{ color: colors.text.muted }}>
+        {/* Mini map */}
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: ".25em",
+            textTransform: "uppercase",
+            color: C.textMuted,
+            marginBottom: 10,
+          }}
+        >
           Recorrido de la ruta
         </p>
         <div
-          className="mb-5 overflow-hidden rounded-2xl"
-          style={{ height: 220, border: `1px solid ${colors.brand.goldBorder}` }}
+          style={{
+            height: 200,
+            borderRadius: 18,
+            overflow: "hidden",
+            border: `1px solid ${C.border}`,
+            marginBottom: 18,
+          }}
         >
           <MapContainer
             center={ruta.waypoints[0]}
             zoom={13}
             scrollWheelZoom={false}
             zoomControl={false}
-            style={{ height: '100%', width: '100%' }}
+            style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -233,276 +403,156 @@ function ModalEditar({
           </MapContainer>
         </div>
 
-        {/* Info rápida */}
-        <div className="mb-5 flex gap-3">
+        {/* Quick info */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
           {[
-            { label: 'Paradas', value: ruta.waypoints.length },
-            { label: 'Camiones', value: ruta.camiones },
-            { label: 'Capacidad', value: ruta.capacidad },
-          ].map(item => (
+            { label: "Paradas", value: ruta.waypoints.length },
+            { label: "Camiones", value: ruta.camiones },
+            { label: "Capacidad", value: ruta.capacidad },
+          ].map((item) => (
             <div
               key={item.label}
-              className="flex-1 rounded-xl py-2 text-center"
-              style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${colors.brand.goldBorder}` }}
+              style={{
+                flex: 1,
+                background: C.surfaceAlt,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                padding: "10px 8px",
+                textAlign: "center",
+              }}
             >
-              <p className="text-xs" style={{ color: colors.text.muted }}>{item.label}</p>
-              <p className="text-lg font-bold" style={{ color: colors.text.primary }}>{item.value}</p>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: C.textMuted,
+                  textTransform: "uppercase",
+                  letterSpacing: ".1em",
+                }}
+              >
+                {item.label}
+              </p>
+              <p
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: C.text,
+                  marginTop: 2,
+                }}
+              >
+                {item.value}
+              </p>
             </div>
           ))}
         </div>
 
-        {/* Botones */}
-        <div className="flex gap-3">
-          <button
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <motion.button
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onClose}
-            className="flex-1 rounded-2xl py-2.5 text-sm transition hover:bg-white/5"
-            style={{ border: `1px solid ${colors.brand.goldBorder}`, color: colors.text.muted }}
+            style={{
+              flex: 1,
+              borderRadius: 14,
+              padding: "11px 0",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+              background: C.surfaceAlt,
+              border: `1px solid ${C.border}`,
+              color: C.textMid,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
           >
             Cancelar
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ y: -1, boxShadow: `0 8px 24px ${C.terraGlow}` }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => {
-              onGuardar(ruta.id, estado)
-              onClose()
+              onGuardar(ruta.id, estado);
+              onClose();
             }}
-            className="flex-1 rounded-2xl py-2.5 text-sm font-semibold transition hover:brightness-110"
-            style={{ background: colors.brand.gold, color: '#1A1200' }}
+            style={{
+              flex: 1,
+              borderRadius: 14,
+              padding: "11px 0",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: C.terra,
+              border: "none",
+              color: "#fff",
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: `0 4px 16px ${C.terraGlow}`,
+            }}
           >
             Guardar cambios
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
-  )
+      </motion.div>
+    </motion.div>
+  );
 }
 
-// Congestión
-function Congestion() {
-  return (
-    <div
-      className="rounded-2xl p-5"
-      style={{
-        background: colors.brown.darker,
-        border: `0.5px solid ${colors.brand.goldBorder}`,
-      }}
-    >
-      <div className="mb-5 flex items-baseline justify-between">
-        <h3
-          className="text-sm font-medium"
-          style={{ color: colors.text.primary }}
-        >
-          Congestión por hora
-        </h3>
-
-        <span
-          className="text-xs"
-          style={{ color: colors.text.muted }}
-        >
-          Tiempo real
-        </span>
-      </div>
-
-      <div className="space-y-3">
-        {congestionHoras.map((item) => {
-          const c = nivelColor(item.nivel)
-
-          return (
-            <div key={item.hora}>
-              <div className="mb-1.5 flex justify-between text-xs">
-                <span style={{ color: colors.text.primary }}>
-                  {item.hora}
-                </span>
-
-                <span
-                  style={{
-                    color: c,
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.nivel}%
-                </span>
-              </div>
-
-              <div
-                className="h-1.5 w-full overflow-hidden rounded-full"
-                style={{ background: '#2B2118' }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${item.nivel}%`,
-                    background: c,
-                  }}
-                />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// Uso semanal
-function UsoSemanal() {
-  const data = {
-    labels: dias,
-
-    datasets: [
-      {
-        data: usoDiario,
-
-        backgroundColor: usoDiario.map((v) =>
-          v === Math.max(...usoDiario)
-            ? colors.brand.gold
-            : 'rgba(201,168,76,0.25)'
-        ),
-
-        borderRadius: 6,
-        borderSkipped: false,
-      },
-    ],
-  }
-
-  return (
-    <div
-      className="rounded-2xl p-5"
-      style={{
-        background: colors.brown.darker,
-        border: `0.5px solid ${colors.brand.goldBorder}`,
-      }}
-    >
-      <div className="mb-5 flex items-baseline justify-between">
-        <h3
-          className="text-sm font-medium"
-          style={{ color: colors.text.primary }}
-        >
-          Uso semanal
-        </h3>
-
-        <span
-          className="text-xs"
-          style={{ color: colors.text.muted }}
-        >
-          Últimos 7 días
-        </span>
-      </div>
-
-      <div style={{ height: 160 }}>
-        <Bar
-          data={data}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-
-            plugins: {
-              legend: { display: false },
-
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => `${ctx.parsed.y}%`,
-                },
-              },
-            },
-
-            scales: {
-              x: {
-                grid: {
-                  color: 'rgba(255,255,255,0.05)',
-                },
-
-                ticks: {
-                  color: colors.text.muted,
-                  font: { size: 11 },
-                },
-              },
-
-              y: {
-                min: 0,
-                max: 100,
-
-                grid: {
-                  color: 'rgba(255,255,255,0.05)',
-                },
-
-                ticks: {
-                  color: colors.text.muted,
-                  font: { size: 11 },
-                  callback: (v) => v + '%',
-                },
-              },
-            },
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-// Modal Nueva Ruta
-
+/* ─── ModalNuevaRuta ─────────────────────────────── */
 function ModalNuevaRuta({
   onClose,
   onGuardar,
 }: {
-  onClose: () => void
-  onGuardar: (ruta: RutaData) => void
+  onClose: () => void;
+  onGuardar: (r: RutaData) => void;
 }) {
-  const [nombre, setNombre] = useState('')
-  const [color, setColor] = useState('#ef7300')
-  const [camiones, setCamiones] = useState(2)
-  const [capacidad, setCapacidad] = useState(40)
-  const [estado, setEstado] = useState<'Activa' | 'Mantenimiento'>('Activa')
-
-  // Waypoints: el usuario los escribe como "lat,lng" por línea
+  const [nombre, setNombre] = useState("");
+  const [color, setColor] = useState("#C04E2E");
+  const [camiones, setCamiones] = useState(2);
+  const [capacidad, setCapacidad] = useState(40);
+  const [estado, setEstado] = useState<"Activa" | "Mantenimiento">("Activa");
   const [waypointsRaw, setWaypointsRaw] = useState(
-    '24.0277, -104.6532\n24.0300, -104.6600'
-  )
-  const [error, setError] = useState<string | null>(null)
+    "24.0277, -104.6532\n24.0300, -104.6600",
+  );
+  const [error, setError] = useState<string | null>(null);
 
-  // Colores predefinidos para elegir rápido
-  const coloresPredefinidos = [
-    { label: 'Naranja', value: '#ef7300' },
-    { label: 'Azul', value: '#00328f' },
-    { label: 'Morado', value: '#ff01d0' },
-    { label: 'Verde', value: '#065b00' },
-    { label: 'Rojo', value: '#cc0000' },
-    { label: 'Dorado', value: '#C9A84C' },
-  ]
+  const COLORES = [
+    { label: "Terracota", value: "#C04E2E" },
+    { label: "Dorado", value: "#C97C12" },
+    { label: "Pino", value: "#3D7355" },
+    { label: "Cielo", value: "#3D82A8" },
+    { label: "Rojo", value: "#B83232" },
+    { label: "Morado", value: "#7B4FA6" },
+  ];
 
   function parsearWaypoints(): [number, number][] | null {
     try {
-      const lineas = waypointsRaw
-        .split('\n')
-        .map(l => l.trim())
+      const puntos = waypointsRaw
+        .split("\n")
+        .map((l) => l.trim())
         .filter(Boolean)
-
-      const puntos = lineas.map(linea => {
-        const partes = linea.split(',').map(p => parseFloat(p.trim()))
-        if (partes.length !== 2 || partes.some(isNaN)) throw new Error()
-        return partes as [number, number]
-      })
-
-      if (puntos.length < 2) throw new Error('mínimo 2')
-      return puntos
+        .map((linea) => {
+          const p = linea.split(",").map((x) => parseFloat(x.trim()));
+          if (p.length !== 2 || p.some(isNaN)) throw new Error();
+          return p as [number, number];
+        });
+      if (puntos.length < 2) throw new Error();
+      return puntos;
     } catch {
-      return null
+      return null;
     }
   }
 
   function handleGuardar() {
     if (!nombre.trim()) {
-      setError('El nombre es obligatorio.')
-      return
+      setError("El nombre es obligatorio.");
+      return;
     }
-
-    const waypoints = parsearWaypoints()
+    const waypoints = parsearWaypoints();
     if (!waypoints) {
-      setError('Los puntos no tienen el formato correcto.\nUsa: latitud, longitud — uno por línea.')
-      return
+      setError("Formato incorrecto. Usa: latitud, longitud — uno por línea.");
+      return;
     }
-
-    const nueva: RutaData = {
-      id: Date.now(),   // ID temporal único
+    onGuardar({
+      id: Date.now(),
       nombre: nombre.trim(),
       color,
       estado,
@@ -510,503 +560,1225 @@ function ModalNuevaRuta({
       camiones,
       capacidad,
       waypoints,
-    }
-
-    onGuardar(nueva)
-    onClose()
+    });
+    onClose();
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "rgba(44,26,14,0.55)",
+        backdropFilter: "blur(6px)",
+      }}
       onClick={onClose}
     >
-      <div
-        className="relative w-full max-w-md rounded-3xl p-6 shadow-2xl"
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.97 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
-          background: colors.brown.darker,
-          border: `1px solid ${colors.brand.goldBorder}`,
-          maxHeight: '90vh',
-          overflowY: 'auto',
+          position: "relative",
+          width: "100%",
+          maxWidth: 460,
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 28,
+          padding: 28,
+          boxShadow: "0 32px 80px rgba(44,26,14,0.2)",
+          maxHeight: "90vh",
+          overflowY: "auto",
         }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Cerrar */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 text-lg transition hover:opacity-60"
-          style={{ color: colors.text.muted }}
-        >✕</button>
+          style={{
+            position: "absolute",
+            right: 20,
+            top: 20,
+            fontSize: 18,
+            color: C.textMuted,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          ✕
+        </button>
 
-        {/* Título */}
-        <h2 className="mb-5 text-lg font-bold" style={{ color: colors.text.primary }}>
+        <h2
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 22,
+            fontWeight: 700,
+            color: C.text,
+            marginBottom: 22,
+          }}
+        >
           + Nueva ruta
         </h2>
 
-        {/*  Nombre  */}
-        <div className="mb-4">
-          <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-            style={{ color: colors.text.muted }}>
-            Nombre de la ruta
-          </label>
+        {/* Nombre */}
+        <FieldLabel>Nombre de la ruta</FieldLabel>
+        <input
+          value={nombre}
+          onChange={(e) => {
+            setNombre(e.target.value);
+            setError(null);
+          }}
+          placeholder="Ej. Ruta Centro"
+          style={{
+            width: "100%",
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontSize: 13,
+            background: C.surfaceAlt,
+            border: `1px solid ${C.border}`,
+            color: C.text,
+            outline: "none",
+            marginBottom: 18,
+            fontFamily: "'DM Sans', sans-serif",
+            boxSizing: "border-box",
+          }}
+        />
+
+        {/* Color */}
+        <FieldLabel>Color</FieldLabel>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            marginBottom: 10,
+          }}
+        >
+          {COLORES.map((c) => (
+            <motion.button
+              key={c.value}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setColor(c.value)}
+              style={{
+                borderRadius: 10,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: `${c.value}18`,
+                border: `1.5px solid ${color === c.value ? c.value : "transparent"}`,
+                color: c.value,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {c.label}
+            </motion.button>
+          ))}
           <input
-            value={nombre}
-            onChange={e => { setNombre(e.target.value); setError(null) }}
-            placeholder="Ej. Ruta Centro"
-            className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            title="Color personalizado"
             style={{
-              background: '#111109',
-              border: `0.5px solid ${colors.brand.goldBorder}`,
-              color: colors.text.primary,
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              background: "transparent",
             }}
           />
         </div>
-
-        {/*  Color  */}
-        <div className="mb-4">
-          <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-            style={{ color: colors.text.muted }}>
-            Color
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {coloresPredefinidos.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setColor(c.value)}
-                className="rounded-lg px-3 py-1.5 text-[10px] font-semibold transition"
-                style={{
-                  background: `${c.value}22`,
-                  border: `1.5px solid ${color === c.value ? c.value : 'transparent'}`,
-                  color: c.value,
-                }}
-              >
-                {c.label}
-              </button>
-            ))}
-            {/* Input de color libre */}
-            <input
-              type="color"
-              value={color}
-              onChange={e => setColor(e.target.value)}
-              title="Color personalizado"
-              className="h-8 w-8 cursor-pointer rounded-lg border-0 bg-transparent"
-            />
-          </div>
-          {/* Preview */}
-          <div className="mt-2 flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-            <span className="text-xs" style={{ color: colors.text.muted }}>{color}</span>
-          </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          <div
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              background: color,
+              boxShadow: `0 0 8px ${color}`,
+            }}
+          />
+          <span style={{ fontSize: 11, color: C.textMuted }}>{color}</span>
         </div>
 
-        {/*  Estado  */}
-        <div className="mb-4">
-          <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-            style={{ color: colors.text.muted }}>
-            Estado inicial
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['Activa', 'Mantenimiento'] as const).map(op => (
-              <button
+        {/* Estado */}
+        <FieldLabel>Estado inicial</FieldLabel>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          {(["Activa", "Mantenimiento"] as const).map((op) => {
+            const sel = estado === op;
+            return (
+              <motion.button
                 key={op}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setEstado(op)}
-                className="rounded-xl py-2.5 text-sm transition"
                 style={{
-                  background: estado === op
-                    ? op === 'Activa' ? 'rgba(111,207,151,0.15)' : 'rgba(201,168,76,0.12)'
-                    : 'rgba(255,255,255,0.03)',
-                  border: `0.5px solid ${estado === op
-                    ? op === 'Activa' ? colors.green.primary : colors.brand.gold
-                    : colors.brand.goldBorder}`,
-                  color: estado === op
-                    ? op === 'Activa' ? colors.green.primary : colors.brand.gold
-                    : colors.text.muted,
+                  borderRadius: 12,
+                  padding: "10px 0",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  background: sel
+                    ? op === "Activa"
+                      ? C.pineSoft
+                      : C.goldSoft
+                    : C.surfaceAlt,
+                  border: `1.5px solid ${sel ? (op === "Activa" ? C.pine : C.gold) : C.border}`,
+                  color: sel ? (op === "Activa" ? C.pine : C.gold) : C.textMid,
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: "all .15s",
                 }}
               >
-                {op === 'Activa' ? '🟢 Activa' : '🔧 Mantenimiento'}
-              </button>
-            ))}
-          </div>
+                {op === "Activa" ? "🟢 Activa" : "🔧 Mantenimiento"}
+              </motion.button>
+            );
+          })}
         </div>
 
-        {/*  Camiones y Capacidad  */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
+        {/* Camiones + Capacidad */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            marginBottom: 18,
+          }}
+        >
           <div>
-            <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-              style={{ color: colors.text.muted }}>
-              Camiones
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCamiones(v => Math.max(1, v - 1))}
-                className="rounded-lg px-2.5 py-1 text-sm font-bold transition hover:brightness-110"
-                style={{ background: colors.brand.orange, color: '#111' }}
-              >−</button>
-              <span className="min-w-[24px] text-center text-sm font-semibold"
-                style={{ color: colors.text.primary }}>
+            <FieldLabel>Camiones</FieldLabel>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setCamiones((v) => Math.max(1, v - 1))}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: C.terraSoft,
+                  border: `1px solid ${C.terraL}`,
+                  color: C.terra,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                −
+              </motion.button>
+              <span
+                style={{
+                  minWidth: 24,
+                  textAlign: "center",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: C.text,
+                }}
+              >
                 {camiones}
               </span>
-              <button
-                onClick={() => setCamiones(v => v + 1)}
-                className="rounded-lg px-2.5 py-1 text-sm font-bold transition hover:brightness-110"
-                style={{ background: colors.green.primary, color: '#111' }}
-              >+</button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setCamiones((v) => v + 1)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: C.pineSoft,
+                  border: `1px solid ${colors.pine.border}`,
+                  color: C.pine,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                +
+              </motion.button>
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-              style={{ color: colors.text.muted }}>
-              Capacidad / camión
-            </label>
+            <FieldLabel>Capacidad / camión</FieldLabel>
             <input
               type="number"
               min={1}
               value={capacidad}
-              onChange={e => setCapacidad(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              onChange={(e) =>
+                setCapacidad(Math.max(1, parseInt(e.target.value) || 1))
+              }
               style={{
-                background: '#111109',
-                border: `0.5px solid ${colors.brand.goldBorder}`,
-                color: colors.text.primary,
+                width: "100%",
+                borderRadius: 12,
+                padding: "8px 12px",
+                fontSize: 13,
+                background: C.surfaceAlt,
+                border: `1px solid ${C.border}`,
+                color: C.text,
+                outline: "none",
+                fontFamily: "'DM Sans', sans-serif",
+                boxSizing: "border-box",
               }}
             />
           </div>
         </div>
 
-        {/*  Waypoints */}
-        <div className="mb-4">
-          <label className="mb-1.5 block text-[10px] uppercase tracking-widest"
-            style={{ color: colors.text.muted }}>
-            Puntos de ruta (lat, lng — uno por línea)
-          </label>
-          <textarea
-            value={waypointsRaw}
-            onChange={e => { setWaypointsRaw(e.target.value); setError(null) }}
-            rows={5}
-            placeholder={"24.0277, -104.6532\n24.0300, -104.6600\n24.0350, -104.6700"}
-            className="w-full rounded-xl px-4 py-2.5 font-mono text-xs outline-none"
-            style={{
-              background: '#111109',
-              border: `0.5px solid ${colors.brand.goldBorder}`,
-              color: colors.text.primary,
-              resize: 'vertical',
-            }}
-          />
-          <p className="mt-1 text-[10px]" style={{ color: colors.text.muted }}>
-            Mínimo 2 puntos. Puedes copiar coordenadas de Google Maps (clic derecho → copiar).
-          </p>
-        </div>
+        {/* Waypoints */}
+        <FieldLabel>Puntos de ruta (lat, lng — uno por línea)</FieldLabel>
+        <textarea
+          value={waypointsRaw}
+          onChange={(e) => {
+            setWaypointsRaw(e.target.value);
+            setError(null);
+          }}
+          rows={5}
+          placeholder={"24.0277, -104.6532\n24.0300, -104.6600"}
+          style={{
+            width: "100%",
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontSize: 12,
+            fontFamily: "monospace",
+            background: C.surfaceAlt,
+            border: `1px solid ${C.border}`,
+            color: C.text,
+            outline: "none",
+            resize: "vertical",
+            boxSizing: "border-box",
+            marginBottom: 6,
+          }}
+        />
+        <p style={{ fontSize: 11, color: C.textMuted, marginBottom: 16 }}>
+          Mínimo 2 puntos. Copia coordenadas desde Google Maps.
+        </p>
 
-        {/* Preview capacidad total */}
+        {/* Capacity preview */}
         <div
-          className="mb-5 rounded-xl px-4 py-2.5 text-xs"
-          style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${colors.brand.goldBorder}` }}
+          style={{
+            background: C.goldSoft,
+            border: `1px solid ${colors.gold.border}`,
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontSize: 12,
+            marginBottom: 16,
+          }}
         >
-          <span style={{ color: colors.text.muted }}>Capacidad total estimada: </span>
-          <span style={{ color: colors.brand.gold, fontWeight: 600 }}>
+          <span style={{ color: C.textMid }}>Capacidad total: </span>
+          <span style={{ color: C.gold, fontWeight: 700 }}>
             {camiones * capacidad} pasajeros
           </span>
-          <span style={{ color: colors.text.muted }}> · {parsearWaypoints()?.length ?? 0} puntos cargados</span>
+          <span style={{ color: C.textMuted }}>
+            {" "}
+            · {parsearWaypoints()?.length ?? 0} puntos
+          </span>
         </div>
 
         {/* Error */}
-        {error && (
-          <div
-            className="mb-4 whitespace-pre-line rounded-xl px-4 py-2.5 text-xs"
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{
+                background: "#FDF0EE",
+                border: "1px solid rgba(192,78,46,0.3)",
+                borderRadius: 12,
+                padding: "10px 14px",
+                fontSize: 12,
+                color: C.terra,
+                marginBottom: 16,
+              }}
+            >
+              ⚠️ {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <motion.button
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onClose}
             style={{
-              background: 'rgba(226,75,74,0.1)',
-              border: '0.5px solid rgba(226,75,74,0.3)',
-              color: '#f09595',
+              flex: 1,
+              borderRadius: 14,
+              padding: "11px 0",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+              background: C.surfaceAlt,
+              border: `1px solid ${C.border}`,
+              color: C.textMid,
+              fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* Botones */}
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-2xl py-2.5 text-sm transition hover:bg-white/5"
-            style={{ border: `1px solid ${colors.brand.goldBorder}`, color: colors.text.muted }}
-          >
             Cancelar
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ y: -1, boxShadow: `0 8px 24px ${C.terraGlow}` }}
+            whileTap={{ scale: 0.97 }}
             onClick={handleGuardar}
-            className="flex-1 rounded-2xl py-2.5 text-sm font-semibold transition hover:brightness-110"
-            style={{ background: colors.brand.gold, color: '#1A1200' }}
+            style={{
+              flex: 1,
+              borderRadius: 14,
+              padding: "11px 0",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: C.terra,
+              border: "none",
+              color: "#fff",
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: `0 4px 16px ${C.terraGlow}`,
+            }}
           >
             Crear ruta
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
-  )
+      </motion.div>
+    </motion.div>
+  );
 }
-// Tabla rutas
 
+/* ─── FieldLabel helper ──────────────────────────── */
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: ".22em",
+        textTransform: "uppercase",
+        color: C.textMuted,
+        marginBottom: 8,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+/* ─── Congestion chart ───────────────────────────── */
+function Congestion() {
+  return (
+    <motion.div
+      variants={fadeUp}
+      style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 20,
+        padding: 22,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: 18,
+        }}
+      >
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+          Congestión por hora
+        </h3>
+        <span
+          style={{
+            fontSize: 11,
+            color: C.textMuted,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <motion.span
+            animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: C.pine,
+              display: "inline-block",
+            }}
+          />
+          Tiempo real
+        </span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {CONGESTION_HORAS.map((item) => {
+          const c = nivelColor(item.nivel);
+          const bg = nivelBg(item.nivel);
+          return (
+            <div key={item.hora}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 5,
+                }}
+              >
+                <span style={{ fontSize: 12, color: C.textMid }}>
+                  {item.hora}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: c,
+                    background: bg,
+                    borderRadius: 999,
+                    padding: "1px 8px",
+                  }}
+                >
+                  {item.nivel}%
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 6,
+                  background: C.surfaceAlt,
+                  borderRadius: 999,
+                  overflow: "hidden",
+                }}
+              >
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${item.nivel}%` }}
+                  transition={{ duration: 0.9, ease: "easeOut", delay: 0.2 }}
+                  style={{ height: "100%", borderRadius: 999, background: c }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Weekly usage chart ─────────────────────────── */
+function UsoSemanal() {
+  const maxVal = Math.max(...USO_DIARIO);
+  const data = {
+    labels: DIAS,
+    datasets: [
+      {
+        data: USO_DIARIO,
+        backgroundColor: USO_DIARIO.map((v) =>
+          v === maxVal ? C.terra : `${C.terra}35`,
+        ),
+        borderRadius: 8,
+        borderSkipped: false as const,
+      },
+    ],
+  };
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 20,
+        padding: 22,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: 18,
+        }}
+      >
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+          Uso semanal
+        </h3>
+        <span style={{ fontSize: 11, color: C.textMuted }}>Últimos 7 días</span>
+      </div>
+      <div style={{ height: 160 }}>
+        <Bar
+          data={data}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}%` } },
+            },
+            scales: {
+              x: {
+                grid: { color: C.borderSoft },
+                ticks: { color: C.textMuted, font: { size: 11 } },
+              },
+              y: {
+                min: 0,
+                max: 100,
+                grid: { color: C.borderSoft },
+                ticks: {
+                  color: C.textMuted,
+                  font: { size: 11 },
+                  callback: (v) => v + "%",
+                },
+              },
+            },
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── TablaRutas ─────────────────────────────────── */
 function TablaRutas({
   rutas,
   setRutas,
 }: {
-  rutas: RutaData[]
-  setRutas: React.Dispatch<React.SetStateAction<RutaData[]>>
+  rutas: RutaData[];
+  setRutas: React.Dispatch<React.SetStateAction<RutaData[]>>;
 }) {
-  const [rutaEditando, setRutaEditando] = useState<RutaData | null>(null)
-  const [modalNueva, setModalNueva] = useState(false)
+  const [rutaEditando, setRutaEditando] = useState<RutaData | null>(null);
+  const [modalNueva, setModalNueva] = useState(false);
 
-  function cambiarCamiones(id: number, cantidad: number) {
-    setRutas(prev => prev.map(r =>
-      r.id !== id ? r : { ...r, camiones: Math.max(0, r.camiones + cantidad) }
-    ))
+  function cambiarCamiones(id: number, delta: number) {
+    setRutas((prev) =>
+      prev.map((r) =>
+        r.id !== id ? r : { ...r, camiones: Math.max(0, r.camiones + delta) },
+      ),
+    );
   }
-
-  function guardarEstado(id: number, nuevoEstado: 'Activa' | 'Mantenimiento') {
-    setRutas(prev => prev.map(r =>
-      r.id !== id ? r : { ...r, estado: nuevoEstado }
-    ))
+  function guardarEstado(id: number, nuevoEstado: "Activa" | "Mantenimiento") {
+    setRutas((prev) =>
+      prev.map((r) => (r.id !== id ? r : { ...r, estado: nuevoEstado })),
+    );
   }
-
-  // ✅ Definida aquí, la usaba ModalNuevaRuta pero no existía
   function agregarRuta(nueva: RutaData) {
-    setRutas(prev => [...prev, nueva])
+    setRutas((prev) => [...prev, nueva]);
   }
 
   return (
-    // ✅ Un solo Fragment, sin divs duplicados ni modales repetidos
     <>
-      {rutaEditando && (
-        <ModalEditar
-          ruta={rutaEditando}
-          onClose={() => setRutaEditando(null)}
-          onGuardar={guardarEstado}
-        />
-      )}
+      <AnimatePresence>
+        {rutaEditando && (
+          <ModalEditar
+            ruta={rutaEditando}
+            onClose={() => setRutaEditando(null)}
+            onGuardar={guardarEstado}
+          />
+        )}
+        {modalNueva && (
+          <ModalNuevaRuta
+            onClose={() => setModalNueva(false)}
+            onGuardar={agregarRuta}
+          />
+        )}
+      </AnimatePresence>
 
-      {modalNueva && (
-        <ModalNuevaRuta
-          onClose={() => setModalNueva(false)}
-          onGuardar={agregarRuta}
-        />
-      )}
-
-      <div
-        className="rounded-2xl p-5"
+      <motion.div
+        variants={fadeUp}
         style={{
-          background: colors.brown.darker,
-          border: `0.5px solid ${colors.brand.goldBorder}`,
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 20,
+          padding: 22,
         }}
       >
-        {/* Cabecera */}
-        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            marginBottom: 20,
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
           <div>
-            <h3 className="text-base font-medium" style={{ color: colors.text.primary }}>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: C.text,
+                fontFamily: "'Playfair Display', serif",
+              }}
+            >
               Gestión de rutas
             </h3>
-            <p className="mt-0.5 text-xs" style={{ color: colors.text.muted }}>
-              {rutas.filter(r => r.estado === 'Activa').length} activas ·{' '}
-              {rutas.filter(r => r.estado === 'Mantenimiento').length} en mantenimiento
+            <p style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>
+              {rutas.filter((r) => r.estado === "Activa").length} activas ·{" "}
+              {rutas.filter((r) => r.estado === "Mantenimiento").length} en
+              mantenimiento
             </p>
           </div>
-
-          <button
+          <motion.button
+            whileHover={{ y: -2, boxShadow: `0 8px 22px ${C.terraGlow}` }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setModalNueva(true)}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition hover:brightness-110"
-            style={{ background: colors.brand.gold, color: '#1A1200' }}
+            style={{
+              background: C.terra,
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: "9px 18px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: `0 4px 14px ${C.terraGlow}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
           >
             + Nueva ruta
-          </button>
+          </motion.button>
         </div>
 
-        {/* Lista de rutas */}
-        <div className="space-y-2">
-          {rutas.map(ruta => {
-            const activa = ruta.estado === 'Activa'
+        {/* Rows */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {rutas.map((ruta, i) => {
+            const activa = ruta.estado === "Activa";
             return (
-              <div
+              <motion.div
                 key={ruta.id}
-                className="flex flex-col justify-between gap-4 rounded-xl p-4 sm:flex-row sm:items-center"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: i * 0.04,
+                  duration: 0.35,
+                  ease: "easeOut",
+                }}
+                whileHover={{
+                  y: -1,
+                  boxShadow: "0 8px 24px rgba(44,26,14,0.07)",
+                }}
                 style={{
-                  background: '#24180f',
-                  border: `0.5px solid ${activa ? colors.brand.goldBorder : 'rgba(201,168,76,0.3)'}`,
-                  opacity: activa ? 1 : 0.8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  background: activa ? C.surfaceAlt : `${C.goldSoft}80`,
+                  border: `1px solid ${activa ? C.border : colors.gold.border}`,
+                  borderRadius: 16,
+                  padding: "14px 16px",
+                  opacity: activa ? 1 : 0.85,
                 }}
               >
-                <div className="flex items-center gap-3">
+                {/* Left info */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div
-                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
                     style={{
-                      background: activa ? ruta.color : '#888',
-                      boxShadow: activa ? `0 0 8px ${ruta.color}88` : 'none',
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: activa ? ruta.color : C.textMuted,
+                      boxShadow: activa ? `0 0 8px ${ruta.color}88` : "none",
+                      flexShrink: 0,
                     }}
                   />
                   <div>
-                    <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                      {ruta.nombre}
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <p
+                        style={{ fontSize: 14, fontWeight: 600, color: C.text }}
+                      >
+                        {ruta.nombre}
+                      </p>
                       {!activa && (
                         <span
-                          className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold"
-                          style={{ background: 'rgba(201,168,76,0.15)', color: colors.brand.gold }}
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: C.goldSoft,
+                            color: C.gold,
+                            borderRadius: 999,
+                            padding: "2px 8px",
+                            border: `1px solid ${colors.gold.border}`,
+                          }}
                         >
                           🔧 Mantenimiento
                         </span>
                       )}
+                    </div>
+                    <p
+                      style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}
+                    >
+                      {ruta.pasajeros.toLocaleString()} pasajeros ·{" "}
+                      {ruta.camiones} camiones · {ruta.waypoints.length} paradas
                     </p>
-                    <p className="mt-0.5 text-xs" style={{ color: colors.text.muted }}>
-                      {ruta.pasajeros.toLocaleString()} · {ruta.camiones} camiones · {ruta.waypoints.length} paradas
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginTop: 6,
+                      }}
+                    >
                       <span
-                        className="rounded-md px-2 py-1 text-[10px]"
-                        style={{ background: `${ruta.color}22`, color: ruta.color }}
+                        style={{
+                          fontSize: 10,
+                          background: `${ruta.color}18`,
+                          color: ruta.color,
+                          borderRadius: 8,
+                          padding: "3px 8px",
+                          fontWeight: 600,
+                        }}
                       >
-                        Capacidad: {ruta.capacidad}
+                        Cap. {ruta.capacidad}
                       </span>
                       <span
-                        className="rounded-md px-2 py-1 text-[10px]"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: colors.text.muted }}
+                        style={{
+                          fontSize: 10,
+                          background: C.surfaceAlt,
+                          color: C.textMuted,
+                          borderRadius: 8,
+                          padding: "3px 8px",
+                          border: `1px solid ${C.border}`,
+                        }}
                       >
-                        {ruta.camiones * ruta.capacidad} pasajeros máx
+                        Máx {ruta.camiones * ruta.capacidad} pasajeros
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-shrink-0 items-center gap-2">
-                  {/* Control camiones */}
-                  <div className="flex items-center gap-1">
-                    <button
+                {/* Right controls */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* Camiones counter */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: C.surfaceAlt,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 10,
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => cambiarCamiones(ruta.id, 1)}
-                      className="rounded-md px-2 py-1 text-xs font-bold transition hover:brightness-110"
-                      style={{ background: colors.green.primary, color: '#111' }}
-                    >+</button>
-                    <span className="min-w-[20px] text-center text-xs" style={{ color: colors.text.primary }}>
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        background: C.pineSoft,
+                        border: `1px solid ${colors.pine.border}`,
+                        color: C.pine,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      +
+                    </motion.button>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: C.text,
+                        minWidth: 20,
+                        textAlign: "center",
+                      }}
+                    >
                       {ruta.camiones}
                     </span>
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => cambiarCamiones(ruta.id, -1)}
-                      className="rounded-md px-2 py-1 text-xs font-bold transition hover:brightness-110"
-                      style={{ background: colors.brand.orange, color: '#111' }}
-                    >-</button>
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 6,
+                        background: C.terraSoft,
+                        border: `1px solid ${C.terraL}`,
+                        color: C.terra,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      −
+                    </motion.button>
                   </div>
 
+                  {/* Estado badge */}
                   <span
-                    className="rounded-lg px-3 py-1 text-xs font-medium"
                     style={{
-                      background: activa ? 'rgba(111,207,151,0.15)' : 'rgba(201,168,76,0.12)',
-                      color: activa ? colors.green.primary : colors.brand.gold,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      borderRadius: 10,
+                      padding: "5px 12px",
+                      background: activa ? C.pineSoft : C.goldSoft,
+                      color: activa ? C.pine : C.gold,
+                      border: `1px solid ${activa ? colors.pine.border : colors.gold.border}`,
                     }}
                   >
                     {ruta.estado}
                   </span>
 
-                  <button
+                  {/* Edit button */}
+                  <motion.button
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setRutaEditando(ruta)}
-                    className="rounded-lg border px-3 py-1.5 text-xs transition hover:bg-white/5"
-                    style={{ borderColor: colors.brand.goldBorder, color: colors.text.primary }}
+                    style={{
+                      borderRadius: 10,
+                      border: `1px solid ${C.border}`,
+                      background: "transparent",
+                      padding: "6px 14px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      color: C.textMid,
+                      fontFamily: "'DM Sans', sans-serif",
+                      transition: "all .15s",
+                    }}
                   >
                     Editar
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
-            )
+              </motion.div>
+            );
           })}
         </div>
-      </div>
+      </motion.div>
     </>
-  )
+  );
 }
-// Principal
 
+/* ─── Main dashboard ─────────────────────────────── */
 function Empleado() {
-  const { rutas, setRutas } = useRutas()
-  const { user } = useAuth()          // ← usuario actual
-  const navigate = useNavigate()
+  const { rutas, setRutas } = useRutas();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Cerrar sesión 
   async function handleSignOut() {
-    await signOut(auth)
-    navigate('/login')
+    await signOut(auth);
+    navigate("/login");
   }
 
-  const totalPasajeros = rutas.reduce((sum, r) => sum + r.pasajeros, 0)
-  const rutasActivas = rutas.filter((r) => r.estado === 'Activa').length
-  const totalCamiones = rutas.reduce((sum, r) => sum + r.camiones, 0)
-  const capacidadTotal = rutas.reduce((sum, r) => sum + r.camiones * r.capacidad, 0)
+  const totalPasajeros = rutas.reduce((s, r) => s + r.pasajeros, 0);
+  const rutasActivas = rutas.filter((r) => r.estado === "Activa").length;
+  const totalCamiones = rutas.reduce((s, r) => s + r.camiones, 0);
+  const capacidadTotal = rutas.reduce(
+    (s, r) => s + r.camiones * r.capacidad,
+    0,
+  );
 
   return (
-    <main
-      className="min-h-screen px-6 py-8"
-      style={{ background: colors.background, fontFamily: "'DM Sans', sans-serif", color: colors.text.primary }}
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      style={{
+        minHeight: "100vh",
+        background: C.bg,
+        fontFamily: "'DM Sans', sans-serif",
+        color: C.text,
+      }}
     >
-      <div className="mx-auto max-w-6xl space-y-6">
+      {/* Ambient blobs */}
+      {[
+        { top: -80, right: -60, w: 360, h: 280, color: "rgba(192,78,46,0.08)" },
+        {
+          bottom: -60,
+          left: -80,
+          w: 300,
+          h: 300,
+          color: "rgba(201,124,18,0.07)",
+        },
+      ].map((b, i) => (
+        <motion.div
+          key={i}
+          animate={{ x: [0, 16, 0], y: [0, 10, 0] }}
+          transition={{
+            duration: 10 + i * 3,
+            repeat: Infinity,
+            repeatType: "mirror",
+            ease: "easeInOut",
+          }}
+          style={{
+            position: "fixed",
+            borderRadius: "50%",
+            filter: "blur(55px)",
+            pointerEvents: "none",
+            zIndex: 0,
+            width: b.w,
+            height: b.h,
+            background: b.color,
+            top: b.top,
+            right: b.right,
+            bottom: b.bottom,
+            left: b.left,
+          }}
+        />
+      ))}
 
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "28px 28px 48px",
+        }}
+      >
+        {/* ── NAV / HEADER ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 16,
+            borderBottom: `1px solid ${C.border}`,
+            paddingBottom: 20,
+            marginBottom: 32,
+          }}
+        >
+          {/* Left */}
           <div>
             <div
-              className="mb-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[10px] uppercase tracking-widest"
-              style={{ borderColor: colors.brand.goldBorder, color: colors.text.muted }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: C.terraSoft,
+                border: `1px solid ${C.terraL}`,
+                borderRadius: 999,
+                padding: "4px 14px",
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: ".2em",
+                textTransform: "uppercase",
+                color: C.terra,
+                marginBottom: 12,
+              }}
             >
-              ⬡ Q-Ruta
+              <motion.span
+                animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: C.terra,
+                  display: "inline-block",
+                }}
+              />
+              Q-Ruta · Panel Administrativo
             </div>
-            <h1 className="text-3xl font-bold" style={{ color: colors.text.primary }}>
-              Panel Administrativo
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: "clamp(24px, 3.5vw, 36px)",
+                fontWeight: 700,
+                color: C.text,
+                lineHeight: 1.15,
+              }}
+            >
+              Dashboard de Transporte
             </h1>
-            <p className="mt-1 text-sm" style={{ color: colors.text.muted }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: C.textMuted,
+                marginTop: 6,
+                fontWeight: 300,
+              }}
+            >
               Monitorea el uso del transporte y administra rutas en tiempo real.
             </p>
           </div>
 
-          {/* ── Lado derecho ── */}
-          <div className="flex flex-col items-end gap-2">
-            {/* Email del usuario */}
+          {/* Right */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 8,
+            }}
+          >
             {user && (
-              <span className="text-xs" style={{ color: colors.text.muted }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: C.textMid,
+                  background: C.surfaceAlt,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 999,
+                  padding: "4px 12px",
+                }}
+              >
                 {user.email}
               </span>
             )}
-
-            <span className="text-xs" style={{ color: colors.text.muted }}>
-              🟢 Actualizado hace 2 min
-            </span>
-
-            {/* Botón cerrar sesión */}
-            <button
-              onClick={handleSignOut}
-              className="rounded-xl border px-4 py-2 text-xs font-semibold uppercase tracking-widest transition hover:bg-white/5"
+            <div
               style={{
-                borderColor: colors.brand.goldBorder,
-                color: colors.text.muted,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: C.textMuted,
+              }}
+            >
+              <motion.span
+                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: C.pine,
+                  display: "inline-block",
+                }}
+              />
+              Actualizado hace 2 min
+            </div>
+            <motion.button
+              whileHover={{ y: -1, borderColor: C.terra, color: C.terra }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleSignOut}
+              style={{
+                background: "transparent",
+                border: `1px solid ${C.border}`,
+                borderRadius: 10,
+                padding: "7px 16px",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                color: C.textMuted,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all .15s",
               }}
             >
               Cerrar sesión
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Stats — sin cambios */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Pasajeros hoy" value={totalPasajeros.toLocaleString()} sub={`en ${rutas.length} rutas`} />
-          <StatCard label="Rutas activas" value={String(rutasActivas)} sub={`${rutas.length - rutasActivas} en mantenimiento`} />
-          <StatCard label="Camiones activos" value={String(totalCamiones)} sub="en circulación" />
-          <StatCard label="Capacidad total" value={String(capacidadTotal)} sub="pasajeros simultáneos" />
-          <StatCard label="Congestión" value="Alta" sub="Hora pico: 2 PM" accent />
-        </div>
+        {/* ── STATS ── */}
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <StatCard
+            label="Pasajeros hoy"
+            value={totalPasajeros.toLocaleString()}
+            sub={`en ${rutas.length} rutas`}
+            icon="🚶"
+            accent="terra"
+          />
+          <StatCard
+            label="Rutas activas"
+            value={String(rutasActivas)}
+            sub={`${rutas.length - rutasActivas} en mant.`}
+            icon="🗺️"
+            accent="pine"
+          />
+          <StatCard
+            label="Camiones activos"
+            value={String(totalCamiones)}
+            sub="en circulación"
+            icon="🚌"
+            accent="gold"
+          />
+          <StatCard
+            label="Capacidad total"
+            value={String(capacidadTotal)}
+            sub="pasajeros simultáneos"
+            icon="💺"
+            accent="sky"
+          />
+          <StatCard
+            label="Congestión"
+            value="Alta"
+            sub="Hora pico: 6 PM"
+            icon="⚠️"
+            accent="terra"
+          />
+        </motion.div>
 
-        {/* Gráficas — sin cambios */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* ── CHARTS ── */}
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
           <Congestion />
           <UsoSemanal />
-        </div>
+        </motion.div>
 
-        {/* Tabla — sin cambios */}
-        <TablaRutas rutas={rutas} setRutas={setRutas} />
+        {/* ── TABLE ── */}
+        <motion.div variants={stagger} initial="hidden" animate="show">
+          <TablaRutas rutas={rutas} setRutas={setRutas} />
+        </motion.div>
       </div>
-    </main>
-  )
+    </motion.main>
+  );
 }
 
-export default Empleado
+export default Empleado;
