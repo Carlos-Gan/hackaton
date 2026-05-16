@@ -9,6 +9,15 @@ export type RutaData = {
     waypoints: [number, number][]
 }
 
+export type PuntoTuristico = {
+    id: number
+    nombre: string
+    descripcion: string
+    categoria: 'Cultural' | 'Natural' | 'Gastronómico' | 'Recreativo'
+    coordenadas: [number, number]
+    color: string
+}
+
 export const rutasIniciales: RutaData[] = [
     {
         id: 1,
@@ -128,4 +137,39 @@ export const rutasIniciales: RutaData[] = [
             [24.005279, -104.677027],
         ],
     },
+]
+
+export const puntosTuristicos: PuntoTuristico[] = [
+    {
+    id: 1,
+    nombre: 'Catedral Basílica',
+    descripcion: 'Uno de los sitios históricos más importantes de Durango.',
+    categoria: 'Cultural',
+    coordenadas: [24.024859, -104.670308],
+    color: '#d4af37',
+  },
+  {
+    id: 2,
+    nombre: 'Parque Guadiana',
+    descripcion: 'Parque tradicional ideal para caminar y descansar.',
+    categoria: 'Natural',
+    coordenadas: [24.024806, -104.686666],
+    color: '#2e8b57',
+  },
+  {
+    id: 3,
+    nombre: 'Teleférico',
+    descripcion: 'Vista panorámica de la ciudad.',
+    categoria: 'Natural',
+    coordenadas: [24.021792, -104.682810],
+    color: '#3acf11',
+  },
+  {
+    id: 4,
+    nombre: 'Museo Túnel de Minería',
+    descripcion: 'Museo subterráneo sobre la historia minera.',
+    categoria: 'Cultural',
+    coordenadas: [24.023954, -104.669946],
+    color: '#9b59b6',
+  },
 ]

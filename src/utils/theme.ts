@@ -1,63 +1,87 @@
-// theme.ts
+// ─── Q-Ruta · Durango · Design Tokens ─────────────────────────────────────
+// Paleta cálida inspirada en la arquitectura colonial, Sierra Madre y desierto
 
 export const colors = {
-    background: '#424e51',
+  // Superficies
+  background:  '#FBF4E8',   // pergamino cálido
+  surface:     '#FFFDF6',   // blanco crema
+  surfaceAlt:  '#F5EDD8',   // arena suave
+  border:      '#E8D8BB',   // borde arena
+  borderSoft:  '#F0E6CE',   // borde muy suave
 
-    text: {
-        primary: '#F0E8D0',
-        secondary: '#ffffff',
-        muted: 'rgba(240,232,208,0.5)',
-    },
+  // Tipografía
+  text: {
+    primary:   '#2C1A0E',   // café oscuro
+    secondary: '#7A5840',   // café medio
+    muted:     '#BFA080',   // arena oscura
+    inverse:   '#FFFDF6',   // para fondos oscuros
+  },
 
-    brand: {
-        orange: '#ce7230',
-        orangeGlow: '#c86a4c',
-        gold: '#C9A84C',
-        goldSoft: 'rgba(201,168,76,0.07)',
-        goldBorder: 'rgba(201,168,76,0.2)',
-        goldCardBorder: 'rgba(201,168,76,0.5)',
-        goldShadow: 'rgba(201,168,76,0.15)',
-    },
+  // Terracota (acción principal)
+  terra: {
+    DEFAULT: '#C04E2E',
+    light:   '#F2C4AF',
+    soft:    '#FDF0EA',
+    dark:    '#8C3418',
+    glow:    'rgba(192,78,46,0.25)',
+  },
 
-    green: {
-        primary: '#6FCF97',
-        dark: '#1E3A2F',
-        darker: '#0E2219',
-        button: '#2e5c317d',
-        border: 'rgba(42,92,69,0.6)',
-        shadow: 'rgba(30,58,47,0.5)',
-    },
+  // Dorado (acento secundario)
+  gold: {
+    DEFAULT: '#C97C12',
+    light:   '#F5D08A',
+    soft:    '#FEF6E0',
+    border:  'rgba(201,124,18,0.3)',
+    glow:    'rgba(201,124,18,0.2)',
+  },
 
-    brown: {
-        dark: '#2A1F00',
-        darker: '#1A1200',
-        button: '#c86b4ca0',
-    },
+  // Pino/verde sierra
+  pine: {
+    DEFAULT: '#3D7355',
+    light:   '#A8CBBA',
+    soft:    '#EAF4EE',
+    border:  'rgba(61,115,85,0.3)',
+    glow:    'rgba(61,115,85,0.15)',
+  },
 
-    gradients: {
-        logo: 'linear-gradient(135deg, #4cc98f, #305e7a)',
-        divider: 'linear-gradient(90deg, #c86a4c, transparent)',
+  // Cielo azul Durango
+  sky: {
+    DEFAULT: '#3D82A8',
+    light:   '#A8CEE2',
+    soft:    '#E8F4FB',
+    border:  'rgba(61,130,168,0.3)',
+  },
 
-        mapaCard:
-            'linear-gradient(145deg, #1E3A2F 0%, #0E2219 100%)',
+  // Gradientes
+  gradients: {
+    logo:      'linear-gradient(135deg, #C04E2E, #C97C12)',
+    heroCard:  'linear-gradient(145deg, #FFFDF6 0%, #FBF4E8 100%)',
+    mapaCard:  'linear-gradient(145deg, #EAF4EE 0%, #D5EDE2 100%)',
+    pagoCard:  'linear-gradient(145deg, #FEF6E0 0%, #FAE8BB 100%)',
+    ctaBanner: 'linear-gradient(118deg, #C04E2E 0%, #9D3A1F 55%, #7A2C15 100%)',
+  },
 
-        pagoCard:
-            'linear-gradient(145deg, #2A1F00 0%, #1A1200 100%)',
-
-        backgroundLight:
-            'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,168,76,0.12) 0%, transparent 70%)',  
-
-        backgroundDark:
-            'radial-gradient(ellipse 50% 40% at 90% 80%, rgba(30,58,47,0.25) 0%, transparent 60%)',
-
-        header:
-            'linear-gradient(135deg, #4cc98f, #305e7a)'
-    },
-
-    card: {
-        green: '#2e5c317d',
-        red: '#c86b4ca0',
-        lightGreen: '#6FCF97',
-        dark: '#0E0E0A'
-    }
+  // Compatibilidad con código existente (aliases)
+  brand: {
+    orange:        '#C04E2E',
+    orangeGlow:    '#E07050',
+    gold:          '#C97C12',
+    goldBorder:    '#E8D8BB',
+    goldSoft:      'rgba(201,124,18,0.08)',
+    goldCardBorder:'rgba(201,124,18,0.3)',
+    goldShadow:    'rgba(201,124,18,0.2)',
+  },
+  green: {
+    border: 'rgba(61,115,85,0.3)',
+    shadow: 'rgba(61,115,85,0.15)',
+  },
+  brown: {
+    button: '#E8D8BB',
+  },
+  card: {
+    green:      '#3D7355',
+    lightGreen: '#EAF4EE',
+    red:        '#C04E2E',
+    dark:       '#FBF4E8',
+  },
 }
